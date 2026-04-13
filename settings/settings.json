@@ -1,0 +1,52 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat | ~/.mempalace/venv/bin/python -m mempalace hook run --hook session-start --harness claude-code"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/cleanup_history.sh"
+          },
+          {
+            "type": "command",
+            "command": "MEMPALACE_AGENT=claude cat | ~/.mempalace/venv/bin/python ~/.mempalace/hook_agent.py stop"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "MEMPALACE_AGENT=claude cat | ~/.mempalace/venv/bin/python ~/.mempalace/hook_agent.py precompact"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'CWD=$(pwd); if ls \"$CWD\" 2>/dev/null | grep -qE \"^(package\\.json|go\\.mod|requirements\\.txt|Cargo\\.toml|pyproject\\.toml|build\\.gradle|\\.git)$\"; then if [ ! -d \"$CWD/.code-review-graph\" ]; then echo \"SETUP NEEDED: code-review-graph not initialized in this project. Run: code-review-graph install --platform claude-code && code-review-graph build\"; fi; fi'"
+          }
+        ]
+      }
+    ]
+  }
+}
