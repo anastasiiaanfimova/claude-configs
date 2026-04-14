@@ -1,0 +1,28 @@
+# Block everything by default
+*
+
+# Runtime artifacts — never version
+shell-snapshots/
+session-env/
+paste-cache/
+project_clones/
+.cache/
+clipboard/
+*.log
+auth.json
+*.key
+*.pem
+*.token
+credentials.json
+settings.local.json
+
+# Explicitly allow what belongs in version control
+!.gitignore
+!README.md
+!CLAUDE.md
+!resources.md
+!cleanup_history.sh
+!settings/
+!settings/**
+!agents/
+!agents/**
