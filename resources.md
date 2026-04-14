@@ -17,6 +17,15 @@ Worth checking periodically for new patterns and updates.
 ### Hooks
 - [disler/claude-code-hooks-mastery](https://github.com/disler/claude-code-hooks-mastery) — hook lifecycle patterns, Python+uv implementation
 - [karanb192/claude-code-hooks](https://github.com/karanb192/claude-code-hooks) — copy-paste-ready hook collection
+- [nizos/tdd-guard](https://github.com/nizos/tdd-guard) — hooks that block file changes violating TDD principles; good reference for quality gate patterns
+- [ldayton/Dippy](https://github.com/ldayton/Dippy) — auto-approve safe bash commands via AST; reduces permission fatigue without disabling safety
+
+### Tooling
+- [agent-sh/agnix](https://github.com/agent-sh/agnix) — linter for CLAUDE.md, agents, hooks, skills; IDE plugins included; useful when managing many agents
+
+### Skills & workflows
+- [trailofbits/skills](https://github.com/trailofbits/skills) — 15+ security skills: CodeQL, Semgrep, variant analysis, fix verification; good reference for security-auditor agent
+- [undeadlist/claude-code-agents](https://github.com/undeadlist/claude-code-agents) — solo dev workflow with multi-auditor patterns, micro-checkpoints, parallel agents
 
 ### Reference
 - [Anthropic CLAUDE.md](https://github.com/anthropics/claude-code-action/blob/main/CLAUDE.md) — official reference implementation from Anthropic
