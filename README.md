@@ -12,9 +12,9 @@ This setup layers three independent memory systems on top of Claude Code. Each s
 | **Codebase structure** | [code-review-graph](https://github.com/tirth8205/code-review-graph) | Functions, classes, call relationships, imports — parsed from source with Tree-sitter, queryable as a graph |
 | **In-project notes** | Claude Code built-in auto-memory | Markdown files in `~/.claude/projects/*/memory/` — facts Claude saves during sessions |
 
-Since MemPalace captures everything important across sessions, raw `.jsonl` session logs are just disk clutter. `cleanup_history.sh` (run as a `Stop` hook) deletes them after 7 days and removes orphaned subagent directories, keeping `~/.claude/projects/` from growing unbounded. The `memory/` directory is always preserved.
-
 None of these overlap: MemPalace is about the agent knowing the user, code-review-graph is about knowing the codebase, auto-memory is about in-project scratchpad facts.
+
+Since MemPalace captures everything important across sessions, raw `.jsonl` session logs are just disk clutter. `cleanup_history.sh` (run as a `Stop` hook) deletes them after 7 days and removes orphaned subagent directories, keeping `~/.claude/projects/` from growing unbounded. The `memory/` directory is always preserved.
 
 ## What's inside
 
@@ -50,7 +50,7 @@ SessionStart     → code-review-graph check
 
 Project-level instructions that tell Claude to use code-review-graph tools before falling back to file scanning (Grep/Glob/Read). The graph is faster and gives structural context — callers, dependents, test coverage — that file scanning can't.
 
-Copy this into any project's `.claude/settings.json` or root `CLAUDE.md` where you've run `code-review-graph build`.
+Copy this into a project's root `CLAUDE.md` or `.claude/CLAUDE.md` after running `code-review-graph build` in that project.
 
 ### `agents/`
 
@@ -79,7 +79,7 @@ Agents for managing the local Claude Code environment. Built-in agents from Clau
 |-------|-------------|-------|
 | `mempalace-admin` | MemPalace maintenance — auditing palace contents, cleanup, KG health. | sonnet |
 | `bash-scripter` | Writes and fixes bash/shell scripts — entrypoints, automation, setup scripts. | sonnet |
-| `release-manager` | npm publish, GitHub releases, changelog, git tags. Knows the `@anastasiiaanfimova` npm scope. | sonnet |
+| `release-manager` | npm publish, GitHub releases, changelog, git tags. Configured for the npm publish workflow on macOS. | sonnet |
 | `docker-debugger` | Diagnoses Docker containers that crash, restart, or fail healthchecks. Knows the Infisical + Docker Compose patterns used in this setup. | sonnet |
 | `ai-researcher` | Latest AI news digest — model releases, research papers, industry moves. | haiku |
 
