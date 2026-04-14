@@ -66,11 +66,11 @@ Built for a QA role at an AI project — backend + web, LLM wrapper for photo/vi
 | `test-architect` | Test strategy from scratch — framework selection, folder structure, phased plan. Specialized for async AI/LLM pipelines and SaaS billing flows. | sonnet | custom |
 | `api-tester` | Automated REST/gRPC tests — happy path, edge cases, auth flows, DB state verification. | sonnet | built-in |
 | `e2e-tester` | Playwright E2E tests — critical user flows, form interactions, auth. | sonnet | built-in |
-| `bug-reporter` | Raw notes → structured bug report for Jira/Linear/GitHub Issues. Severity guide tuned for SaaS: always captures user plan, job state, quota. | haiku | custom |
 | `test-case-writer` | Human-readable test cases for manual testing in Qase/TestRail. | haiku | built-in |
 | `coverage-analyst` | Finds gaps in test coverage, prioritizes what to cover next. | haiku | built-in |
 | `security-auditor` | API and web app security audit — auth bypasses, injection, broken access control. | sonnet | built-in |
 | `perf-tester` | k6 load tests for async AI pipelines — concurrent job submissions, queue saturation, polling storms, SLA validation. | sonnet | custom |
+| `bug-reporter` | Raw notes → structured bug report for Jira/Linear/GitHub Issues. Severity guide tuned for SaaS: always captures user plan, job state, quota. | haiku | custom |
 
 #### Claude Code setup
 
