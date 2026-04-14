@@ -58,7 +58,7 @@ Custom subagents for specialized tasks. Drop any of these into `~/.claude/agents
 
 #### QA toolkit
 
-Built for a solo QA role at an AI SaaS startup — backend + web, LLM wrapper for photo/video generation, async job pipelines, no existing tests. Three agents are fully custom; the rest are standard Claude Code built-in agents stored here for version control.
+Built for a QA role at an AI project — backend + web, LLM wrapper for photo/video generation, async job pipelines. Three agents are fully custom; the rest are standard Claude Code built-in agents stored here for version control.
 
 | Agent | What it does | Model | Origin |
 |-------|-------------|-------|--------|
