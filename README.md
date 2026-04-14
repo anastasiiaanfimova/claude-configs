@@ -81,8 +81,4 @@ Custom subagents for specialized tasks. Drop any of these into `~/.claude/agents
 cp agents/bug-reporter.md ~/.claude/agents/
 ```
 
-**Hooks** — merge `settings/settings.json` into your `~/.claude/settings.json`. Adjust paths if your MemPalace or cleanup script lives elsewhere.
-
-**CLAUDE.md** — copy into a project root or `.claude/` folder after running `code-review-graph build` in that project.
-
-Claude Code hooks documentation: https://docs.anthropic.com/en/docs/claude-code/hooks
+Copy what's useful, adjust paths to your setup. [Claude Code hooks docs](https://docs.anthropic.com/en/docs/claude-code/hooks)
