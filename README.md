@@ -2,7 +2,53 @@
 
 My personal Claude Code configuration — custom agents, hooks, CLAUDE.md examples, and patterns I use day-to-day. Feel free to adapt anything here.
 
+## Memory stack
+
+This setup layers three independent memory systems on top of Claude Code. Each solves a different problem:
+
+| Layer | Tool | What it remembers |
+|-------|------|-------------------|
+| **Cross-session agent memory** | [MemPalace](https://github.com/MemPalace/mempalace) | Who the user is, project context, feedback, preferences — persists across sessions in a diary + knowledge graph |
+| **Codebase structure** | [code-review-graph](https://github.com/tirth8205/code-review-graph) | Functions, classes, call relationships, imports — parsed from source with Tree-sitter, queryable as a graph |
+| **In-project notes** | Claude Code built-in auto-memory | Markdown files in `~/.claude/projects/*/memory/` — facts Claude saves during sessions |
+
+None of these overlap: MemPalace is about the agent knowing the user, code-review-graph is about knowing the codebase, auto-memory is about in-project scratchpad facts.
+
 ## What's inside
+
+### `settings/settings.json`
+
+Four hooks that wire the memory stack into Claude Code:
+
+```
+UserPromptSubmit → MemPalace session-start
+                   Loads relevant memories into context before each message.
+                   Without this, MemPalace exists but Claude never reads it.
+
+Stop             → cleanup_history.sh
+                   Deletes .jsonl session logs older than 7 days.
+                   Safe to do because MemPalace already captured what matters.
+
+Stop             → MemPalace stop hook
+                   Claude writes a diary entry + KG facts at end of session.
+                   This is how memories actually get saved.
+
+PreCompact       → MemPalace precompact hook
+                   Before Claude Code compresses the context window, important
+                   facts are written to MemPalace so they survive compaction.
+
+SessionStart     → code-review-graph check
+                   Warns if the codebase graph hasn't been initialized yet.
+                   Reminds you to run `code-review-graph build` in new projects.
+```
+
+> **Requirements:** MemPalace installed at `~/.mempalace/`, code-review-graph MCP connected. If you don't use these tools, the hook structure is still a useful reference — swap in your own commands.
+
+### `CLAUDE.md`
+
+Project-level instructions that tell Claude to use code-review-graph tools before falling back to file scanning (Grep/Glob/Read). The graph is faster and gives structural context — callers, dependents, test coverage — that file scanning can't.
+
+Copy this into any project's `.claude/settings.json` or root `CLAUDE.md` where you've run `code-review-graph build`.
 
 ### `agents/`
 
@@ -26,25 +72,6 @@ Custom subagents for specialized tasks. Drop any of these into `~/.claude/agents
 | `openclaw-admin` | OpenClaw config — agents, schema, docker-compose overrides | sonnet |
 | `mempalace-admin` | MemPalace maintenance — auditing, cleanup, KG health | sonnet |
 
-### `CLAUDE.md`
-
-Project-level instructions for Claude Code using the [code-review-graph](https://github.com/tirth8205/code-review-graph) MCP. Shows how to:
-- Direct Claude to use graph tools before file scanning
-- Structure a tool reference table
-- Define a workflow for code review and impact analysis
-
-Adapt the tool names to whatever MCPs you use — the pattern works for any MCP-heavy setup.
-
-### `settings/settings.json`
-
-Claude Code hooks wired up to [MemPalace](https://github.com/MemPalace/mempalace) (persistent AI memory) and code-review-graph. Shows usage of:
-- `UserPromptSubmit` — runs before Claude processes each message
-- `Stop` — runs when a session ends (cleanup + diary write)
-- `PreCompact` — runs before context compaction
-- `SessionStart` — checks if code-review-graph is initialized in the current project
-
-> **Note:** these hooks require MemPalace installed at `~/.mempalace`. If you don't use MemPalace, the hook structure is still a useful reference — swap in your own commands.
-
 ### `cleanup_history.sh`
 
 Auto-deletes Claude Code session `.jsonl` files older than 7 days and removes orphaned subagent directories. Designed to run as a `Stop` hook. Keeps the `memory/` directory intact.
@@ -58,6 +85,8 @@ If you use MemPalace, it persists everything important (diary, KG, agent memory)
 cp agents/bug-reporter.md ~/.claude/agents/
 ```
 
-**Everything else** — copy what's useful, adjust paths and tool names to your setup.
+**Hooks** — merge `settings/settings.json` into your `~/.claude/settings.json`. Adjust paths if your MemPalace or cleanup script lives elsewhere.
+
+**CLAUDE.md** — copy into a project root or `.claude/` folder after running `code-review-graph build` in that project.
 
 Claude Code hooks documentation: https://docs.anthropic.com/en/docs/claude-code/hooks
