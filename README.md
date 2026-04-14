@@ -27,13 +27,13 @@ UserPromptSubmit → MemPalace session-start
                    Loads relevant memories into context before each message.
                    Without this, MemPalace exists but Claude never reads it.
 
-Stop             → cleanup_history.sh
-                   Deletes .jsonl session logs older than 7 days.
-                   Safe to do because MemPalace already captured what matters.
-
-Stop             → MemPalace stop hook
-                   Claude writes a diary entry + KG facts at end of session.
-                   This is how memories actually get saved.
+Stop             → [1] cleanup_history.sh
+                       Deletes .jsonl session logs older than 7 days.
+                       Safe to do because MemPalace already captured what matters.
+                   [2] MemPalace stop hook
+                       Claude writes a diary entry + KG facts at end of session.
+                       This is how memories actually get saved.
+                   (One event, two commands — both run sequentially on session end.)
 
 PreCompact       → MemPalace precompact hook
                    Before Claude Code compresses the context window, important
