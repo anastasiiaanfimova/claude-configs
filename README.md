@@ -63,13 +63,13 @@ Built for a QA role at an AI project — backend + web, LLM wrapper for photo/vi
 | Agent | What it does | Model | Origin |
 |-------|-------------|-------|--------|
 | `test-architect` | Test strategy from scratch — framework selection, folder structure, phased plan. Specialized for async AI/LLM pipelines and SaaS billing flows. | sonnet | custom |
-| `perf-tester` | k6 load tests for async AI pipelines — concurrent job submissions, queue saturation, polling storms, SLA validation. | sonnet | custom |
-| `bug-reporter` | Raw notes → structured bug report for Jira/Linear/GitHub Issues. Severity guide tuned for SaaS: always captures user plan, job state, quota. | haiku | custom |
 | `api-tester` | Automated REST/gRPC tests — happy path, edge cases, auth flows, DB state verification. | sonnet | built-in |
 | `e2e-tester` | Playwright E2E tests — critical user flows, form interactions, auth. | sonnet | built-in |
-| `coverage-analyst` | Finds gaps in test coverage, prioritizes what to cover next. | haiku | built-in |
+| `bug-reporter` | Raw notes → structured bug report for Jira/Linear/GitHub Issues. Severity guide tuned for SaaS: always captures user plan, job state, quota. | haiku | custom |
 | `test-case-writer` | Human-readable test cases for manual testing in Qase/TestRail. | haiku | built-in |
+| `coverage-analyst` | Finds gaps in test coverage, prioritizes what to cover next. | haiku | built-in |
 | `security-auditor` | API and web app security audit — auth bypasses, injection, broken access control. | sonnet | built-in |
+| `perf-tester` | k6 load tests for async AI pipelines — concurrent job submissions, queue saturation, polling storms, SLA validation. | sonnet | custom |
 | `qa-researcher` | Digest of new QA tools and testing practices — LLM eval, API testing, async pipelines, load testing. | haiku | custom |
 
 #### Claude Code setup
@@ -78,11 +78,11 @@ Agents for managing the local Claude Code environment. Built-in agents from Clau
 
 | Agent | What it does | Model |
 |-------|-------------|-------|
-| `mempalace-admin` | MemPalace maintenance — auditing palace contents, cleanup, KG health. | sonnet |
 | `bash-scripter` | Writes and fixes bash/shell scripts — entrypoints, automation, setup scripts. | sonnet |
-| `release-manager` | npm publish, GitHub releases, changelog, git tags. Configured for the npm publish workflow on macOS. | sonnet |
 | `docker-debugger` | Diagnoses Docker containers that crash, restart, or fail healthchecks. Knows the Infisical + Docker Compose patterns used in this setup. | sonnet |
+| `release-manager` | npm publish, GitHub releases, changelog, git tags. Configured for the npm publish workflow on macOS. | sonnet |
 | `ai-researcher` | Latest AI news digest — model releases, research papers, industry moves. | haiku |
+| `mempalace-admin` | MemPalace maintenance — auditing palace contents, cleanup, KG health. | sonnet |
 
 #### Side projects
 
