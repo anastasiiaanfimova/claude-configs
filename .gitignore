@@ -21,6 +21,7 @@ settings.local.json
 !README.md
 !CLAUDE.md
 !resources.md
+!review-notes.md
 !cleanup_history.sh
 !settings/
 !settings/**
