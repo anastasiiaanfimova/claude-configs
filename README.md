@@ -12,6 +12,8 @@ This setup layers three independent memory systems on top of Claude Code. Each s
 | **Codebase structure** | [code-review-graph](https://github.com/tirth8205/code-review-graph) | Functions, classes, call relationships, imports — parsed from source with Tree-sitter, queryable as a graph |
 | **In-project notes** | Claude Code built-in auto-memory | Markdown files in `~/.claude/projects/*/memory/` — facts Claude saves during sessions |
 
+Since MemPalace captures everything important across sessions, raw `.jsonl` session logs are just disk clutter. `cleanup_history.sh` (run as a `Stop` hook) deletes them after 7 days and removes orphaned subagent directories, keeping `~/.claude/projects/` from growing unbounded. The `memory/` directory is always preserved.
+
 None of these overlap: MemPalace is about the agent knowing the user, code-review-graph is about knowing the codebase, auto-memory is about in-project scratchpad facts.
 
 ## What's inside
@@ -71,12 +73,6 @@ Custom subagents for specialized tasks. Drop any of these into `~/.claude/agents
 | `hermes-admin` | Hermes agent config — docker setup, channels, Infisical secrets | sonnet |
 | `openclaw-admin` | OpenClaw config — agents, schema, docker-compose overrides | sonnet |
 | `mempalace-admin` | MemPalace maintenance — auditing, cleanup, KG health | sonnet |
-
-### `cleanup_history.sh`
-
-Auto-deletes Claude Code session `.jsonl` files older than 7 days and removes orphaned subagent directories. Designed to run as a `Stop` hook. Keeps the `memory/` directory intact.
-
-If you use MemPalace, it persists everything important (diary, KG, agent memory) across sessions — so the raw `.jsonl` session logs are just disk clutter. This script keeps the `~/.claude/projects/` directory from growing unbounded.
 
 ## How to use
 
