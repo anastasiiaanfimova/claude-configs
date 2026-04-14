@@ -56,23 +56,41 @@ Copy this into any project's `.claude/settings.json` or root `CLAUDE.md` where y
 
 Custom subagents for specialized tasks. Drop any of these into `~/.claude/agents/` and Claude Code will route to them automatically.
 
+#### QA toolkit
+
+Built for a solo QA role at an AI SaaS startup — backend + web, LLM wrapper for photo/video generation, async job pipelines, no existing tests. Three agents are fully custom; the rest are standard Claude Code built-in agents stored here for version control.
+
+| Agent | What it does | Model | Origin |
+|-------|-------------|-------|--------|
+| `test-architect` | Test strategy from scratch — framework selection, folder structure, phased plan. Specialized for async AI/LLM pipelines and SaaS billing flows. | sonnet | custom |
+| `perf-tester` | k6 load tests for async AI pipelines — concurrent job submissions, queue saturation, polling storms, SLA validation. | sonnet | custom |
+| `bug-reporter` | Raw notes → structured bug report for Jira/Linear/GitHub Issues. Severity guide tuned for SaaS: always captures user plan, job state, quota. | haiku | custom |
+| `api-tester` | Automated REST/gRPC tests — happy path, edge cases, auth flows, DB state verification. | sonnet | built-in |
+| `e2e-tester` | Playwright E2E tests — critical user flows, form interactions, auth. | sonnet | built-in |
+| `coverage-analyst` | Finds gaps in test coverage, prioritizes what to cover next. | haiku | built-in |
+| `test-case-writer` | Human-readable test cases for manual testing in Qase/TestRail. | haiku | built-in |
+| `security-auditor` | API and web app security audit — auth bypasses, injection, broken access control. | sonnet | built-in |
+
+#### Claude Code setup
+
+Agents for managing the local Claude Code environment. Built-in agents from Claude Code; `release-manager` and `docker-debugger` have project-specific context baked in.
+
 | Agent | What it does | Model |
 |-------|-------------|-------|
-| `test-architect` | Test strategy, framework selection, folder structure, phased plan — for greenfield projects | sonnet |
-| `api-tester` | Automated REST/gRPC tests — happy path, edge cases, auth flows, DB state verification | sonnet |
-| `e2e-tester` | Playwright E2E tests — critical user flows, form interactions, auth | sonnet |
-| `coverage-analyst` | Finds gaps in test coverage, prioritizes what to cover next | haiku |
-| `test-case-writer` | Human-readable test cases for manual testing in Qase/TestRail | haiku |
-| `security-auditor` | API and web app security audit — auth bypasses, injection, broken access control | sonnet |
-| `perf-tester` | k6 load tests — concurrent users, queue saturation, SLA validation | sonnet |
-| `bug-reporter` | Raw notes → structured bug report ready for Jira/Linear/GitHub Issues | haiku |
-| `ai-researcher` | Latest AI news digest — model releases, research papers, industry moves | sonnet |
-| `bash-scripter` | Writes and fixes bash/shell scripts — entrypoints, automation, setup scripts | sonnet |
-| `docker-debugger` | Diagnoses Docker containers that crash, restart, fail healthchecks | sonnet |
-| `release-manager` | npm publish, GitHub releases, changelog, git tags | sonnet |
-| `hermes-admin` | Hermes agent config — docker setup, channels, Infisical secrets | sonnet |
-| `openclaw-admin` | OpenClaw config — agents, schema, docker-compose overrides | sonnet |
-| `mempalace-admin` | MemPalace maintenance — auditing, cleanup, KG health | sonnet |
+| `mempalace-admin` | MemPalace maintenance — auditing palace contents, cleanup, KG health. | sonnet |
+| `bash-scripter` | Writes and fixes bash/shell scripts — entrypoints, automation, setup scripts. | sonnet |
+| `release-manager` | npm publish, GitHub releases, changelog, git tags. Knows the `@anastasiiaanfimova` npm scope. | sonnet |
+| `docker-debugger` | Diagnoses Docker containers that crash, restart, or fail healthchecks. Knows the Infisical + Docker Compose patterns used in this setup. | sonnet |
+| `ai-researcher` | Latest AI news digest — model releases, research papers, industry moves. | haiku |
+
+#### Side projects
+
+Agents for two separate self-hosted projects. Useful only if you run the same setup.
+
+| Agent | What it does | Model |
+|-------|-------------|-------|
+| `hermes-admin` | [Hermes](https://github.com/anastasiiaanfimova/hermes-docker) config — Docker setup, channels, Infisical secrets, entrypoint debugging. | sonnet |
+| `openclaw-admin` | [OpenClaw](https://openclaw.ai) config — agents, schema, docker-compose overrides, GHCR updates. | sonnet |
 
 ## How to use
 
