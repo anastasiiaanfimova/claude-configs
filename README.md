@@ -66,7 +66,7 @@ Built for a QA role at an AI project — backend + web, LLM wrapper for photo/vi
 | `test-architect` | Test strategy from scratch — framework selection, folder structure, phased plan. Specialized for async AI/LLM pipelines and SaaS billing flows. | sonnet | custom |
 | `api-tester` | Automated REST/gRPC tests — happy path, edge cases, auth flows, DB state verification. | sonnet | built-in |
 | `e2e-tester` | Playwright E2E tests — critical user flows, form interactions, auth. | sonnet | built-in |
-| `test-case-writer` | Human-readable test cases for manual testing in Qase/TestRail. Checklist+comment format — behavior over navigation steps. | haiku | custom |
+| `test-case-writer` | Test cases as checklists with inline `//` comments — checks *what* to verify and *why*, not how to navigate the UI. Includes ready-made scenario blocks for async AI generation (submit→poll→result, timeouts, provider errors) and SaaS billing limits. | haiku | custom |
 | `coverage-analyst` | Finds gaps in test coverage, prioritizes what to cover next. | haiku | built-in |
 | `security-auditor` | API and web app security audit — auth bypasses, injection, broken access control. | sonnet | built-in |
 | `perf-tester` | k6 load tests for async AI pipelines — concurrent job submissions, queue saturation, polling storms, SLA validation. | sonnet | custom |
