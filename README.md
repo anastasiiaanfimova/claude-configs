@@ -49,6 +49,8 @@ Claude Code hooks wired up to [MemPalace](https://github.com/MemPalace/mempalace
 
 Auto-deletes Claude Code session `.jsonl` files older than 7 days and removes orphaned subagent directories. Designed to run as a `Stop` hook. Keeps the `memory/` directory intact.
 
+If you use MemPalace, it persists everything important (diary, KG, agent memory) across sessions — so the raw `.jsonl` session logs are just disk clutter. This script keeps the `~/.claude/projects/` directory from growing unbounded.
+
 ## How to use
 
 **Agents** — copy any agent file to `~/.claude/agents/`:
