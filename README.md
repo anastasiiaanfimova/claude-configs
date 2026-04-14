@@ -70,6 +70,7 @@ Built for a QA role at an AI project — backend + web, LLM wrapper for photo/vi
 | `coverage-analyst` | Finds gaps in test coverage, prioritizes what to cover next. | haiku | built-in |
 | `test-case-writer` | Human-readable test cases for manual testing in Qase/TestRail. | haiku | built-in |
 | `security-auditor` | API and web app security audit — auth bypasses, injection, broken access control. | sonnet | built-in |
+| `qa-researcher` | Digest of new QA tools and testing practices — LLM eval, API testing, async pipelines, load testing. | haiku | custom |
 
 #### Claude Code setup
 
