@@ -27,7 +27,7 @@
 
 **Позже**
 - [Claude Code Agents (undeadlist)](https://github.com/undeadlist/claude-code-agents) — workflow для solo разработчика с multi-auditor паттернами и micro-checkpoints. Интересно для понимания оркестрации агентов, не срочно.
-- [Dippy](https://github.com/ldayton/Dippy) — авто-апрув безопасных bash-команд через AST. Уменьшает permission fatigue. Вернуться когда надоест кликать Allow.
+- ~~[Dippy](https://github.com/ldayton/Dippy)~~ — **установлен** (v0.2.7, brew). PreToolUse хук на Bash активен.
 
 **Пропустили**
 - Командные инструменты, визуальная регрессия, mobile, enterprise — не в контексте.
@@ -41,9 +41,9 @@
 
 **Позже**
 - [parry](https://github.com/...) — хук-сканер на prompt injection и секреты. Ранняя стадия, отслеживать.
-- Observability: `ccxray` (HTTP proxy, токены/стоимость), `claude-devtools` (subagent tree), `cclogviewer`. Для понимания реального cost 16 агентов.
-- [Rulesync](https://github.com/...) — автогенерация конфигов агентов из единого источника. Актуально при выравнивании frontmatter всех 16.
-- `claude-code-statusline` с MCP-мониторингом — видно какие MCP дёргаются в реальном времени (MemPalace, code-review-graph, computer-use).
+- Observability: ~~`claude-devtools`~~ — **установлен** (v0.4.10, brew), но UI не показывает дерево subagent-ов. Нужно screen recording permission. `ccxray`, `cclogviewer` — не трогали.
+- ~~[Rulesync](https://github.com/...)~~ — **dismissed**: инструмент для синхронизации правил между агентами, не для генерации конфигов. Не нужен.
+- `claude-code-statusline` с MCP-мониторингом — не трогали.
 
 **Пропустили**
 - Ralph (autonomous loops), orchestrators, Britfix (диалект-конвертер), VoiceMode MCP.
@@ -59,7 +59,7 @@
 - Statusline паттерн: context% с цветом (green/yellow/red) + cost + cache hit rate. Сравнить с текущим statusline.sh.
 
 **Позже**
-- Anti-rationalization Stop хук — Haiku evaluator блокирует агента от преждевременной "победы". Вернуться после наблюдения за поведением агентов в claude-devtools.
+- Anti-rationalization Stop хук — Haiku evaluator блокирует агента от преждевременной "победы". Отложено: нужно сначала понаблюдать за реальным поведением через claude-devtools (оно установлено, но screen recording не выдан).
 - `/clear` вместо `/compact` — компакция lossy, явная очистка контекста между задачами.
 
 **Пропустили**
@@ -76,7 +76,7 @@
 - GitHub Actions: `pr-claude-code-review.yml` — `anthropics/claude-code-action@beta`, 30 мин timeout, 10 turns, передаёт checklist-агента. Шаблон для CI-ревью.
 
 **Позже**
-- Skill-eval hook — JS-движок анализирует промпт по ключевым словам и подсказывает нужный skill. Актуально когда skills станет 20+.
+- Skill-eval hook — JS-движок анализирует промпт по ключевым словам и подсказывает нужный skill. Отложено: сейчас skills мало, не актуально до 20+.
 
 **Пропустили**
 - Остальная структура проекта — у нас уже есть аналоги.
@@ -91,11 +91,30 @@
 - Трёхфазная структура промпта: Analysis → Implementation → Delivery. Использовать как шаблон при написании новых агентов.
 
 **Позже**
-- `chaos-engineer` паттерн — resilience testing async pipelines. Актуально для фото/видео генерации с очередями, но на этапе нагрузочного тестирования.
-- `accessibility-tester` — WCAG coverage, зависит от UI-насыщенности продукта.
+- `chaos-engineer` паттерн — resilience testing async pipelines. Отложено: нужен нагрузочный фреймворк сначала, преждевременно без k6 сценариев.
+- `accessibility-tester` — WCAG coverage. Отложено: зависит от UI-насыщенности продукта, пока не приоритет.
 
 **Пропустили**
 - Coordinator-агенты, language specialists — не в контексте.
 - "Улучшить qa-researcher по qa-expert" — расплывчато без конкретного diff.
+
+---
+
+## karanb192/claude-code-hooks
+*2026-04-15*
+
+262 тестов, 4 типа хуков.
+
+**Взяли**
+- Ничего — всё перекрыто тем что уже стоит.
+
+**Позже**
+- `protect-secrets.js` (PreToolUse на Read|Edit|Write|Bash) — блокирует чтение и модификацию sensitive файлов (.env, ключи). Единственное что не покрывает dippy. Посмотреть что именно блокирует и не конфликтует ли с workflow.
+- `event-logger.py` (Utils) — логирует все hook events с полными payload-ами. Полезно при отладке хуков, не для постоянного использования.
+
+**Пропустили**
+- `block-dangerous-commands.js` — дублирует dippy, который уже стоит и делает это через AST.
+- `auto-stage.js` (PostToolUse на Edit|Write) — авто-git-add после каждого изменения. Рискованно: можно случайно застейджить лишнее.
+- `notify-permission.js` — Slack-алерт когда Claude ждёт апрув. Solo работа, не нужно.
 
 ---
