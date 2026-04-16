@@ -38,7 +38,8 @@ Stop             → [1] cleanup_history.sh
                        ~/.mempalace/export/, then git commits + pushes to a private
                        backup repo. ChromaDB is binary — this creates a browsable,
                        git-tracked copy of everything MemPalace knows.
-                   (One event, three commands — all run async on session end.)
+                   (One event, three commands. Hook [2] is synchronous — it blocks
+                   until Claude writes the diary. Hooks [1] and [3] run async.)
 
 PreCompact       → MemPalace precompact hook
                    Before Claude Code compresses the context window, important
@@ -68,9 +69,9 @@ If Claude is launched from any other directory, MemPalace is simply unavailable 
 
 ### `CLAUDE.md`
 
-Project-level instructions that tell Claude to use code-review-graph tools before falling back to file scanning (Grep/Glob/Read). The graph is faster and gives structural context — callers, dependents, test coverage — that file scanning can't.
+The **global** `~/.claude/CLAUDE.md` contains only the MemPalace protocol — instructions to call `mempalace_status` at session start, search before answering about people/projects, and write diary at session end.
 
-Copy this into a project's root `CLAUDE.md` or `.claude/CLAUDE.md` after running `code-review-graph build` in that project.
+The `code-review-graph` block that was here previously is **project-specific** — it belongs in a project's own `CLAUDE.md` or `.claude/CLAUDE.md`, not in the global file. Copy it into any project where you've run `code-review-graph build`.
 
 ### `agents/`
 
@@ -106,12 +107,11 @@ Built for a QA role at an AI project — backend + web, LLM wrapper for photo/vi
 
 #### Side projects
 
-Agents for two separate self-hosted projects. Useful only if you run the same setup.
+Agents for separate self-hosted projects. These are **project-scoped** — not in `~/.claude/agents/` globally, but placed in `.claude/agents/` inside the specific project directory. This keeps them out of unrelated contexts.
 
-| Agent | What it does | Model |
-|-------|-------------|-------|
-| `hermes-admin` | [Hermes](https://github.com/anastasiiaanfimova/hermes-docker) config — Docker setup, channels, Infisical secrets, entrypoint debugging. Project-scoped: `~/Hermes/` and main `~/Claude/` only. | sonnet |
-| `openclaw-admin` | [OpenClaw](https://openclaw.ai) config — agents, schema, docker-compose overrides, GHCR updates. Project-scoped: `~/Openclaw/` and main `~/Claude/` only. | sonnet |
+| Agent | What it does | Model | Scope |
+|-------|-------------|-------|-------|
+| `hermes-admin` | [Hermes](https://github.com/anastasiiaanfimova/hermes-docker) config — Docker setup, channels, Infisical secrets, entrypoint debugging. | sonnet | `~/Hermes/.claude/agents/` |
 
 ### `commands/setup.md`
 
