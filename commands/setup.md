@@ -8,7 +8,24 @@ Run one-time setup for this project. Do all steps in order.
 
 ### Step 1 — Check MemPalace
 Call `mempalace_status` to confirm it's available.
-Then call `mempalace_search` using the project name (derive from current directory name) to find any existing knowledge about this project.
+
+If MemPalace is not available (MCP tool missing), stop and tell the user:
+> MemPalace не настроен для этого проекта. Добавь в `.mcp.json` в корне проекта:
+> ```json
+> {
+>   "mcpServers": {
+>     "mempalace": {
+>       "command": "/Users/anastasiia/.mempalace/venv/bin/python3",
+>       "args": ["-m", "mempalace.mcp_server", "--palace", "/Users/anastasiia/.<project-name>/mempalace"],
+>       "type": "stdio",
+>       "env": {}
+>     }
+>   }
+> }
+> ```
+> После этого перезапусти сессию и запусти `/setup` снова.
+
+If available — call `mempalace_search` using the project name (derive from current directory name) to find any existing knowledge about this project.
 
 ### Step 2 — Create project memory files
 
@@ -44,7 +61,7 @@ type: feedback
 ## В конце сессии:
 - Вызвать `mempalace_diary_write` — записать что произошло, что узнала, что важно
 
-**Why:** Единая конфигурация памяти во всех проектах. MemPalace — основной источник, файлы — резервный слой.
+**Why:** Каждый проект имеет изолированный MemPalace palace. MemPalace — основной источник, файлы — резервный слой.
 ```
 
 ### Step 3 — Set up code-review-graph
