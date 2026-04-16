@@ -110,8 +110,8 @@ Agents for two separate self-hosted projects. Useful only if you run the same se
 
 | Agent | What it does | Model |
 |-------|-------------|-------|
-| `hermes-admin` | [Hermes](https://github.com/anastasiiaanfimova/hermes-docker) config — Docker setup, channels, Infisical secrets, entrypoint debugging. | sonnet |
-| `openclaw-admin` | [OpenClaw](https://openclaw.ai) config — agents, schema, docker-compose overrides, GHCR updates. | sonnet |
+| `hermes-admin` | [Hermes](https://github.com/anastasiiaanfimova/hermes-docker) config — Docker setup, channels, Infisical secrets, entrypoint debugging. Project-scoped: `~/Hermes/` and main `~/Claude/` only. | sonnet |
+| `openclaw-admin` | [OpenClaw](https://openclaw.ai) config — agents, schema, docker-compose overrides, GHCR updates. Project-scoped: `~/Openclaw/` and main `~/Claude/` only. | sonnet |
 
 ### `commands/setup.md`
 
