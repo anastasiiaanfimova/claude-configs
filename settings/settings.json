@@ -42,8 +42,7 @@
           },
           {
             "type": "command",
-            "command": "MEMPALACE_AGENT=claude MEMPALACE_PALACE_PATH=$(bash ~/.mempalace/palace_detect.sh) cat | ~/.mempalace/venv/bin/python3 ~/.mempalace/hook_agent.py stop",
-            "async": true
+            "command": "MEMPALACE_AGENT=claude MEMPALACE_PALACE_PATH=$(bash ~/.mempalace/palace_detect.sh) cat | ~/.mempalace/venv/bin/python3 ~/.mempalace/hook_agent.py stop"
           },
           {
             "type": "command",
