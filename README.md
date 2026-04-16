@@ -76,6 +76,18 @@ Copy this into a project's root `CLAUDE.md` or `.claude/CLAUDE.md` after running
 
 Custom subagents for specialized tasks. Drop any of these into `~/.claude/agents/` and Claude Code will route to them automatically.
 
+#### Claude Code setup
+
+Agents for managing the local Claude Code environment. Built-in agents from Claude Code; `release-manager` and `docker-debugger` have project-specific context baked in.
+
+| Agent | What it does | Model |
+|-------|-------------|-------|
+| `ai-researcher` | Latest AI news digest — model releases, research papers, industry moves. | haiku |
+| `bash-scripter` | Writes and fixes bash/shell scripts — entrypoints, automation, setup scripts. | sonnet |
+| `docker-debugger` | Diagnoses Docker containers that crash, restart, or fail healthchecks. Knows the Infisical + Docker Compose patterns used in this setup. | sonnet |
+| `release-manager` | npm publish, GitHub releases, changelog, git tags. Configured for the npm publish workflow on macOS. | sonnet |
+| `mempalace-admin` | MemPalace maintenance — auditing palace contents, cleanup, KG health. | sonnet |
+
 #### QA toolkit
 
 Built for a QA role at an AI project — backend + web, LLM wrapper for photo/video generation, async job pipelines. Three agents are fully custom; the rest are standard Claude Code built-in agents stored here for version control.
@@ -91,18 +103,6 @@ Built for a QA role at an AI project — backend + web, LLM wrapper for photo/vi
 | `security-auditor` | API and web app security audit — auth bypasses, injection, broken access control. | sonnet | built-in |
 | `perf-tester` | k6 load tests for async AI pipelines — concurrent job submissions, queue saturation, polling storms, SLA validation. | sonnet | custom |
 | `bug-reporter` | Raw notes → structured bug report for Jira/Linear/GitHub Issues. Severity guide tuned for SaaS: always captures user plan, job state, quota. | haiku | custom |
-
-#### Claude Code setup
-
-Agents for managing the local Claude Code environment. Built-in agents from Claude Code; `release-manager` and `docker-debugger` have project-specific context baked in.
-
-| Agent | What it does | Model |
-|-------|-------------|-------|
-| `ai-researcher` | Latest AI news digest — model releases, research papers, industry moves. | haiku |
-| `bash-scripter` | Writes and fixes bash/shell scripts — entrypoints, automation, setup scripts. | sonnet |
-| `docker-debugger` | Diagnoses Docker containers that crash, restart, or fail healthchecks. Knows the Infisical + Docker Compose patterns used in this setup. | sonnet |
-| `release-manager` | npm publish, GitHub releases, changelog, git tags. Configured for the npm publish workflow on macOS. | sonnet |
-| `mempalace-admin` | MemPalace maintenance — auditing palace contents, cleanup, KG health. | sonnet |
 
 #### Side projects
 
