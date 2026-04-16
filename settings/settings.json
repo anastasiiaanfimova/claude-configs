@@ -26,7 +26,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cat | MEMPALACE_PALACE_PATH=$(bash ~/.mempalace/palace_detect.sh) ~/.mempalace/venv/bin/python -m mempalace hook run --hook session-start --harness claude-code"
+            "command": "cat | MEMPALACE_PALACE_PATH=$(bash ~/.mempalace/palace_detect.sh) ~/.mempalace/venv/bin/python3 -m mempalace hook run --hook session-start --harness claude-code"
           }
         ]
       }
@@ -42,12 +42,12 @@
           },
           {
             "type": "command",
-            "command": "MEMPALACE_AGENT=claude MEMPALACE_PALACE_PATH=$(bash ~/.mempalace/palace_detect.sh) cat | ~/.mempalace/venv/bin/python ~/.mempalace/hook_agent.py stop",
+            "command": "MEMPALACE_AGENT=claude MEMPALACE_PALACE_PATH=$(bash ~/.mempalace/palace_detect.sh) cat | ~/.mempalace/venv/bin/python3 ~/.mempalace/hook_agent.py stop",
             "async": true
           },
           {
             "type": "command",
-            "command": "bash -c '~/.mempalace/venv/bin/python ~/.mempalace/export.py 2>/dev/null; cd ~/.mempalace && git add export/ && git diff --cached --quiet || (git commit -m \"snapshot $(date +%Y-%m-%d)\" && git push origin master 2>/dev/null)'",
+            "command": "bash -c '~/.mempalace/venv/bin/python3 ~/.mempalace/export.py 2>/dev/null; cd ~/.mempalace && git add export/ && git diff --cached --quiet || (git commit -m \"snapshot $(date +%Y-%m-%d)\" && git push origin master 2>/dev/null)'",
             "async": true,
             "statusMessage": "Saving MemPalace snapshot..."
           }
@@ -60,7 +60,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "MEMPALACE_AGENT=claude MEMPALACE_PALACE_PATH=$(bash ~/.mempalace/palace_detect.sh) cat | ~/.mempalace/venv/bin/python ~/.mempalace/hook_agent.py precompact"
+            "command": "MEMPALACE_AGENT=claude MEMPALACE_PALACE_PATH=$(bash ~/.mempalace/palace_detect.sh) cat | ~/.mempalace/venv/bin/python3 ~/.mempalace/hook_agent.py precompact"
           }
         ]
       }
