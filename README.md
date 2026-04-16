@@ -57,9 +57,9 @@ MemPalace is configured **per project** via `.mcp.json`, not globally. Each proj
 
 ```
 ~/Claude/.mcp.json     → mempalace → ~/.mempalace/palace      (main)
-~/Edarium/.mcp.json    → mempalace → ~/.edarium/mempalace
 ~/Openclaw/.mcp.json   → mempalace → ~/.openclaw/mempalace/palace
 ~/Hermes/.mcp.json     → mempalace → ~/.hermes/mempalace
+~/MyProject/.mcp.json  → mempalace → ~/.myproject/mempalace
 ```
 
 The server is always named `mempalace` in each project, so hooks and tool permissions (`mcp__mempalace__*`) are identical everywhere. The only difference is which palace they point to.
