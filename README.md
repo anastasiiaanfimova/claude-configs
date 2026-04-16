@@ -113,11 +113,31 @@ Agents for two separate self-hosted projects. Useful only if you run the same se
 | `hermes-admin` | [Hermes](https://github.com/anastasiiaanfimova/hermes-docker) config — Docker setup, channels, Infisical secrets, entrypoint debugging. | sonnet |
 | `openclaw-admin` | [OpenClaw](https://openclaw.ai) config — agents, schema, docker-compose overrides, GHCR updates. | sonnet |
 
+### `commands/setup.md`
+
+A `/setup` slash command for one-time project initialization. Run it once when starting work in a new project directory.
+
+What it does:
+1. Checks MemPalace is available — if not, prints the exact `.mcp.json` snippet to add
+2. Searches the palace for any existing knowledge about this project
+3. Creates `~/.claude/projects/.../memory/` files with the MemPalace protocol reminder
+4. Checks whether `code-review-graph` is initialized, prompts to run it if not
+5. Adds the project to the MemPalace knowledge graph (setup date + project facts you describe)
+6. Writes a diary entry so the setup is recorded in palace history
+
+**Requires:** `mempalace` configured in the project's `.mcp.json` (see MCP project isolation above).
+
 ## How to use
 
 **Agents** — copy any agent file to `~/.claude/agents/`:
 ```bash
 cp agents/bug-reporter.md ~/.claude/agents/
 ```
+
+**`/setup` command** — copy to `~/.claude/commands/`:
+```bash
+cp commands/setup.md ~/.claude/commands/
+```
+Then run `/setup` from any new project directory.
 
 Copy what's useful, adjust paths to your setup. [Claude Code hooks docs](https://docs.anthropic.com/en/docs/claude-code/hooks)
