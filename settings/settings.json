@@ -3,6 +3,11 @@
     "type": "command",
     "command": "bash \"$HOME/.claude/statusline.sh\""
   },
+  "permissions": {
+    "allow": [
+      "mcp__mempalace__*"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {
@@ -32,11 +37,13 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.claude/cleanup_history.sh"
+            "command": "bash ~/.claude/cleanup_history.sh",
+            "async": true
           },
           {
             "type": "command",
-            "command": "MEMPALACE_AGENT=claude cat | ~/.mempalace/venv/bin/python ~/.mempalace/hook_agent.py stop"
+            "command": "MEMPALACE_AGENT=claude cat | ~/.mempalace/venv/bin/python ~/.mempalace/hook_agent.py stop",
+            "async": true
           }
         ]
       }
