@@ -26,7 +26,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cat | ~/.mempalace/venv/bin/python -m mempalace hook run --hook session-start --harness claude-code"
+            "command": "cat | MEMPALACE_PALACE_PATH=$(bash ~/.mempalace/palace_detect.sh) ~/.mempalace/venv/bin/python -m mempalace hook run --hook session-start --harness claude-code"
           }
         ]
       }
@@ -42,7 +42,7 @@
           },
           {
             "type": "command",
-            "command": "MEMPALACE_AGENT=claude cat | ~/.mempalace/venv/bin/python ~/.mempalace/hook_agent.py stop",
+            "command": "MEMPALACE_AGENT=claude MEMPALACE_PALACE_PATH=$(bash ~/.mempalace/palace_detect.sh) cat | ~/.mempalace/venv/bin/python ~/.mempalace/hook_agent.py stop",
             "async": true
           },
           {
@@ -60,7 +60,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "MEMPALACE_AGENT=claude cat | ~/.mempalace/venv/bin/python ~/.mempalace/hook_agent.py precompact"
+            "command": "MEMPALACE_AGENT=claude MEMPALACE_PALACE_PATH=$(bash ~/.mempalace/palace_detect.sh) cat | ~/.mempalace/venv/bin/python ~/.mempalace/hook_agent.py precompact"
           }
         ]
       }
