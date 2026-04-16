@@ -6,34 +6,56 @@ description: One-time project setup — initialize MemPalace context and project
 
 Run one-time setup for this project. Do all steps in order.
 
-### Step 1 — Check MemPalace
-Call `mempalace_status` to confirm it's available.
+Derive the project name from the current directory name (lowercase).
+Derive the project palace path as `/Users/anastasiia/.<project-name>/mempalace`.
 
-If MemPalace is not available (MCP tool missing), stop and tell the user:
-> MemPalace не настроен для этого проекта. Добавь в `.mcp.json` в корне проекта:
-> ```json
-> {
->   "mcpServers": {
->     "mempalace": {
->       "command": "/Users/anastasiia/.mempalace/venv/bin/python3",
->       "args": ["-m", "mempalace.mcp_server", "--palace", "/Users/anastasiia/.<project-name>/mempalace"],
->       "type": "stdio",
->       "env": {}
->     }
->   }
-> }
-> ```
-> После этого перезапусти сессию и запусти `/setup` снова.
+---
 
-If available — call `mempalace_search` using the project name (derive from current directory name) to find any existing knowledge about this project.
+### Phase 1 — Infrastructure
 
-### Step 2 — Create project memory files
+Check if `.mcp.json` exists in the current project root AND contains a `mempalace` entry.
+
+**If `.mcp.json` is missing or has no `mempalace` entry:**
+
+1. Create or update `.mcp.json` — add the `mempalace` server (merge with existing content if file exists):
+```json
+{
+  "mcpServers": {
+    "mempalace": {
+      "command": "/Users/anastasiia/.mempalace/venv/bin/python3",
+      "args": ["-m", "mempalace.mcp_server", "--palace", "/Users/anastasiia/.<project-name>/mempalace"],
+      "type": "stdio",
+      "env": {}
+    }
+  }
+}
+```
+
+2. Create or update `.claude/settings.local.json` — add mempalace to permissions and enabledMcpjsonServers (merge, don't overwrite):
+   - Add `"mcp__mempalace__*"` to `permissions.allow` if not already there
+   - Add `"mempalace"` to `enabledMcpjsonServers` if not already there
+
+3. Tell the user:
+> Файлы созданы. Перезапусти сессию (закрой и открой Claude Code в этой папке) и запусти `/setup` снова — теперь MemPalace подключится автоматически.
+
+Then stop. Do not continue to Phase 2.
+
+---
+
+### Phase 2 — MemPalace setup
+
+Only run this phase if `mempalace_status` is available (MCP connected).
+
+**Step 1 — Check palace**
+Call `mempalace_status`, then `mempalace_search` using the project name to find any existing knowledge.
+
+**Step 2 — Create project memory files**
 
 The project memory path is `~/.claude/projects/<encoded-path>/memory/` where `<encoded-path>` is the absolute path to the current directory with `/` replaced by `-`.
 
 Create the following files if they don't already exist:
 
-**MEMORY.md** (index file — one line per memory file):
+**MEMORY.md**:
 ```
 # MEMORY.md
 
@@ -64,7 +86,7 @@ type: feedback
 **Why:** Каждый проект имеет изолированный MemPalace palace. MemPalace — основной источник, файлы — резервный слой.
 ```
 
-### Step 3 — Set up code-review-graph
+**Step 3 — Set up code-review-graph**
 
 Check if `.code-review-graph/` directory exists in the current project root.
 
@@ -78,7 +100,7 @@ Check if `.code-review-graph/` directory exists in the current project root.
 
 Don't run the command yourself — the user needs to run it manually in the project terminal.
 
-### Step 4 — Add project to MemPalace knowledge graph
+**Step 4 — Add project to MemPalace knowledge graph**
 
 Call `mempalace_kg_add` with:
 - subject: project name (directory name)
@@ -87,11 +109,11 @@ Call `mempalace_kg_add` with:
 
 Ask the user: "Расскажи пару слов о проекте — что это, твоя роль, что важно помнить?" Then add what they say as additional KG facts.
 
-### Step 5 — Write diary entry
+**Step 5 — Write diary entry**
 
 Call `mempalace_diary_write` with agent_name `claude`, topic = project name.
 Record: project name, setup date, what you learned about the project in this session.
 
-### Step 6 — Report
+**Step 6 — Report**
 
 Tell the user what was set up and confirm the project is ready.
