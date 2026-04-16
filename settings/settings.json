@@ -44,6 +44,12 @@
             "type": "command",
             "command": "MEMPALACE_AGENT=claude cat | ~/.mempalace/venv/bin/python ~/.mempalace/hook_agent.py stop",
             "async": true
+          },
+          {
+            "type": "command",
+            "command": "bash -c '~/.mempalace/venv/bin/python ~/.mempalace/export.py 2>/dev/null; cd ~/.mempalace && git add export/ && git diff --cached --quiet || (git commit -m \"snapshot $(date +%Y-%m-%d)\" && git push origin master 2>/dev/null)'",
+            "async": true,
+            "statusMessage": "Saving MemPalace snapshot..."
           }
         ]
       }

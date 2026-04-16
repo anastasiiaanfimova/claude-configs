@@ -33,7 +33,12 @@ Stop             → [1] cleanup_history.sh
                    [2] MemPalace stop hook
                        Claude writes a diary entry + KG facts at end of session.
                        This is how memories actually get saved.
-                   (One event, two commands — both run sequentially on session end.)
+                   [3] MemPalace snapshot export (async)
+                       Exports all palace drawers to human-readable Markdown in
+                       ~/.mempalace/export/, then git commits + pushes to a private
+                       backup repo. ChromaDB is binary — this creates a browsable,
+                       git-tracked copy of everything MemPalace knows.
+                   (One event, three commands — all run async on session end.)
 
 PreCompact       → MemPalace precompact hook
                    Before Claude Code compresses the context window, important
@@ -45,6 +50,21 @@ SessionStart     → code-review-graph check
 ```
 
 > **Requirements:** MemPalace installed at `~/.mempalace/`, code-review-graph MCP connected. If you don't use these tools, the hook structure is still a useful reference — swap in your own commands.
+
+## MCP project isolation
+
+MemPalace is configured **per project** via `.mcp.json`, not globally. Each project directory has its own palace so Claude running from that directory only sees memories for that project — no cross-contamination.
+
+```
+~/Claude/.mcp.json     → mempalace → ~/.mempalace/palace      (main)
+~/Edarium/.mcp.json    → mempalace → ~/.edarium/mempalace
+~/Openclaw/.mcp.json   → mempalace → ~/.openclaw/mempalace/palace
+~/Hermes/.mcp.json     → mempalace → ~/.hermes/mempalace
+```
+
+The server is always named `mempalace` in each project, so hooks and tool permissions (`mcp__mempalace__*`) are identical everywhere. The only difference is which palace they point to.
+
+If Claude is launched from any other directory, MemPalace is simply unavailable — by design.
 
 ### `CLAUDE.md`
 
