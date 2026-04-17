@@ -109,9 +109,10 @@ Built for a QA role at an AI project — backend + web, LLM wrapper for photo/vi
 
 Agents for separate self-hosted projects. These are **project-scoped** — not in `~/.claude/agents/` globally, but placed in `.claude/agents/` inside the specific project directory. This keeps them out of unrelated contexts.
 
-| Agent | What it does | Model | Scope |
-|-------|-------------|-------|-------|
-| `hermes-admin` | [Hermes](https://github.com/anastasiiaanfimova/hermes-docker) config — Docker setup, channels, Infisical secrets, entrypoint debugging. | sonnet | `~/Hermes/.claude/agents/` |
+| Agent | What it does | Model |
+|-------|-------------|-------|
+| `hermes-admin` | [Hermes](https://github.com/anastasiiaanfimova/hermes-docker) config — Docker setup, channels, Infisical secrets, entrypoint debugging. | sonnet |
+| `openclaw-admin` | [OpenClaw](https://github.com/anastasiiaanfimova/openclaw) config — agents, models, docker-compose, Infisical secrets, schema validation. | sonnet |
 
 ### `commands/setup.md`
 
