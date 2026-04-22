@@ -52,6 +52,33 @@ SessionStart     → code-review-graph check
 
 > **Requirements:** MemPalace installed at `~/.mempalace/`, code-review-graph MCP connected. If you don't use these tools, the hook structure is still a useful reference — swap in your own commands.
 
+## Credential management
+
+API keys and tokens never go into shell files (`~/.zshrc`, `~/.zshenv`) or `.env` files. Instead they live in [agent-vault](https://github.com/Infisical/agent-vault) — an encrypted local credential proxy for AI agents.
+
+**Why agent-vault instead of env files:** env files get committed by accident, end up in logs, and leak through shell history. agent-vault stores credentials AES-256-GCM encrypted on disk and injects them only when explicitly invoked.
+
+### How it works
+
+Credentials are grouped into vaults per project or scope:
+
+```bash
+agent-vault vault credential set KEY=value --vault myproject
+agent-vault vault credential set KEY=value           # default vault
+```
+
+To run Claude with credentials injected as env vars:
+
+```bash
+agent-vault vault run --vault myproject -- claude
+```
+
+Claude sees the credentials as environment variables for that session. The raw values never appear in shell config or command history.
+
+### CLAUDE.md enforces the rule
+
+The global `CLAUDE.md` instructs Claude to never save API keys to shell files — always offer `agent-vault vault credential set` instead. This means even if the user asks Claude to "save this token", Claude will redirect to the vault.
+
 ## MCP project isolation
 
 MemPalace is configured **per project** via `.mcp.json`, not globally. Each project directory has its own palace so Claude running from that directory only sees memories for that project — no cross-contamination.
@@ -69,7 +96,7 @@ If Claude is launched from any other directory, MemPalace is simply unavailable 
 
 ### `CLAUDE.md`
 
-The **global** `~/.claude/CLAUDE.md` contains only the MemPalace protocol — instructions to call `mempalace_status` at session start, search before answering about people/projects, and write diary at session end.
+The **global** `~/.claude/CLAUDE.md` contains the MemPalace protocol and credential management rules. The MemPalace section instructs Claude to call `mempalace_status` at session start, search before answering about people/projects, and write diary at session end. The credential section instructs Claude to never write API keys to shell files and always redirect to agent-vault instead.
 
 The `code-review-graph` block that was here previously is **project-specific** — it belongs in a project's own `CLAUDE.md` or `.claude/CLAUDE.md`, not in the global file. Copy it into any project where you've run `code-review-graph build`.
 

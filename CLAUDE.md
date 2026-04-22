@@ -16,3 +16,13 @@
 ## Разделение контекстов проектов
 
 Каждый проект — отдельный контекст. Никогда не упоминать и не использовать знания из другого проекта, если пользователь явно не попросил.
+
+## Управление credentials
+
+Никогда не сохранять API-ключи, токены и секреты в shell-файлы (~/.zshenv, ~/.zshrc, ~/.bashrc и т.д.).
+Все credentials хранятся в agent-vault:
+- `agent-vault vault credential set --vault edarium KEY=value` — для Edarium (Jira, Confluence)
+- `agent-vault vault credential set --vault zencreator KEY=value` — для ZenCreator
+- `agent-vault vault credential set KEY=value` — для общих/cross-project ключей (default vault)
+
+Если пользователь просит сохранить токен или ключ — предложить добавить в нужный vault, не в файл.
