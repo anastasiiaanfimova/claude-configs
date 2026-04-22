@@ -170,10 +170,12 @@ Then run `/setup` from any new project directory.
 
 Copy what's useful, adjust paths to your setup. [Claude Code hooks docs](https://docs.anthropic.com/en/docs/claude-code/hooks)
 
-**Pre-commit hook** — `hooks/pre-commit` blocks commits that contain private project or service names. After cloning, install it and add your own forbidden words:
+**Pre-commit hook** — `hooks/pre-commit` is a global hook that blocks private project or service names from leaking into public repos. It checks staged diffs only for repos under your GitHub owner, and only if they're public. Install it once and it covers all repos on the machine:
 
 ```bash
-cp hooks/pre-commit .git/hooks/pre-commit
-chmod +x .git/hooks/pre-commit
-# then edit .git/hooks/pre-commit and fill in FORBIDDEN=()
+cp hooks/pre-commit ~/.git-hooks/pre-commit
+chmod +x ~/.git-hooks/pre-commit
+git config --global core.hooksPath ~/.git-hooks
 ```
+
+Then edit `~/.git-hooks/pre-commit` and fill in `FORBIDDEN=()` with your private project names. Keep that file local — never commit it.
