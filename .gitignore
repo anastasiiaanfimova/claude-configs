@@ -30,3 +30,5 @@ settings.local.json
 !commands/
 !commands/**
 !palace_detect.sh
+!hooks/
+!hooks/**

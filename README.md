@@ -169,3 +169,11 @@ cp commands/setup.md ~/.claude/commands/
 Then run `/setup` from any new project directory.
 
 Copy what's useful, adjust paths to your setup. [Claude Code hooks docs](https://docs.anthropic.com/en/docs/claude-code/hooks)
+
+**Pre-commit hook** — `hooks/pre-commit` blocks commits that contain private project or service names. After cloning, install it and add your own forbidden words:
+
+```bash
+cp hooks/pre-commit .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+# then edit .git/hooks/pre-commit and fill in FORBIDDEN=()
+```

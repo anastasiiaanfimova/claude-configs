@@ -1,0 +1,26 @@
+#!/bin/bash
+# Block commits with private project/service names in this public repo.
+# Edit FORBIDDEN to list names that should never appear in staged changes.
+
+FORBIDDEN=(
+  # add your private project names here, e.g.:
+  # myproject
+  # internal-tool
+)
+
+FOUND=0
+
+for word in "${FORBIDDEN[@]}"; do
+  matches=$(git diff --cached --unified=0 | grep "^+" | grep -iv "^+++" | grep -i "$word")
+  if [ -n "$matches" ]; then
+    echo "❌ pre-commit: private name '$word' found in staged changes:"
+    echo "$matches"
+    FOUND=1
+  fi
+done
+
+if [ "$FOUND" -eq 1 ]; then
+  echo ""
+  echo "Replace with a generic placeholder (e.g. <project>) before committing."
+  exit 1
+fi
