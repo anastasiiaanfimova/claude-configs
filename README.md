@@ -70,10 +70,33 @@ agent-vault vault credential set KEY=value           # default vault
 To run Claude with credentials injected as env vars:
 
 ```bash
-agent-vault vault run --vault myproject -- claude
+agent-vault vault run --no-mitm --vault myproject -- claude
 ```
 
-Claude sees the credentials as environment variables for that session. The raw values never appear in shell config or command history.
+`--no-mitm` disables the HTTPS MITM proxy so Claude connects to `api.anthropic.com` directly. Without it, agent-vault intercepts all HTTPS traffic and blocks any host that doesn't have a configured broker service — which causes a 403 error when Claude tries to reach Anthropic. The `--no-mitm` flag is the right default unless you specifically need the proxy to inject credentials into outbound API calls.
+
+Claude still gets `AGENT_VAULT_SESSION_TOKEN` set, so scripts in that session can call `agent-vault vault credential get` to read credentials. The raw values never appear in shell config or command history.
+
+The typical pattern for a project that needs credentials at dev time but not in the Claude session itself (e.g. a Vite app that reads API keys at startup):
+
+```bash
+# dev.sh — reads from vault at process start, exports for Vite
+export MY_API_KEY=$(agent-vault vault credential get --vault myproject MY_API_KEY)
+exec npx vite "$@"
+```
+
+Run this instead of `npm run dev`. Claude doesn't need the vault proxy; only the dev script does.
+
+### Shell aliases
+
+A convenient way to wire this up in `~/.zshrc`:
+
+```bash
+alias claude='agent-vault vault run --no-mitm -- claude'
+alias claude-myproject='agent-vault vault run --no-mitm --vault myproject -- claude'
+```
+
+The interactive vault selector appears on first run if no `--vault` is specified. To skip it: always use `--vault` or set the active vault with `agent-vault vault use default`.
 
 ### CLAUDE.md enforces the rule
 
