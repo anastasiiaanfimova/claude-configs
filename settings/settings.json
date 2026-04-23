@@ -1,8 +1,4 @@
 {
-  "statusLine": {
-    "type": "command",
-    "command": "bash \"$HOME/.claude/statusline.sh\""
-  },
   "permissions": {
     "allow": [
       "mcp__mempalace__*"
@@ -47,8 +43,8 @@
           {
             "type": "command",
             "command": "bash -c '~/.mempalace/venv/bin/python3 ~/.mempalace/export.py 2>/dev/null; cd ~/.mempalace && git add export/ && git diff --cached --quiet || (git commit -m \"snapshot $(date +%Y-%m-%d)\" && git push origin master 2>/dev/null)'",
-            "async": true,
-            "statusMessage": "Saving MemPalace snapshot..."
+            "statusMessage": "Saving MemPalace snapshot...",
+            "async": true
           }
         ]
       }
@@ -75,6 +71,10 @@
         ]
       }
     ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash \"$HOME/.claude/statusline.sh\""
   },
   "enabledPlugins": {
     "warp@claude-code-warp": true

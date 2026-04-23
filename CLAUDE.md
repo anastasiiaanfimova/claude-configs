@@ -21,7 +21,8 @@
 
 Никогда не сохранять API-ключи, токены и секреты в shell-файлы (~/.zshenv, ~/.zshrc, ~/.bashrc и т.д.).
 Все credentials хранятся в agent-vault:
-- `agent-vault vault credential set --vault <project> KEY=value` — для конкретного проекта
+- `agent-vault vault credential set --vault <project> KEY=value` — для <project> (Jira, Confluence)
+- `agent-vault vault credential set --vault <project> KEY=value` — для <project>
 - `agent-vault vault credential set KEY=value` — для общих/cross-project ключей (default vault)
 
 Если пользователь просит сохранить токен или ключ — предложить добавить в нужный vault, не в файл.

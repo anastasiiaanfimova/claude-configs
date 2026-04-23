@@ -43,7 +43,7 @@ Active wings:
 ```python
 # Connect to palace
 import chromadb
-client = chromadb.PersistentClient(path="/Users/anastasiia/.mempalace/palace")
+client = chromadb.PersistentClient(path="/Users/<user>/.mempalace/palace")
 col = client.get_collection("mempalace")
 
 # List all wings
@@ -75,7 +75,7 @@ old_ids = [
 ```bash
 ~/.mempalace/venv/bin/python3 << 'EOF'
 import chromadb
-client = chromadb.PersistentClient(path="/Users/anastasiia/.mempalace/palace")
+client = chromadb.PersistentClient(path="/Users/<user>/.mempalace/palace")
 col = client.get_collection("mempalace")
 # your operation here
 EOF
@@ -117,7 +117,7 @@ When asked to audit the palace:
 ```bash
 ~/.mempalace/venv/bin/python3 -c "
 import chromadb
-client = chromadb.PersistentClient(path='/Users/anastasiia/.mempalace/palace')
+client = chromadb.PersistentClient(path='/Users/<user>/.mempalace/palace')
 col = client.get_collection('mempalace')
 r = col.get(where={'wing': 'WING_NAME'})
 print(f'Will delete {len(r[\"ids\"])} drawers')
