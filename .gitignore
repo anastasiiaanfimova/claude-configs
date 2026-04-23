@@ -32,3 +32,5 @@ settings.local.json
 !palace_detect.sh
 !hooks/
 !hooks/**
+!skills/
+!skills/**
