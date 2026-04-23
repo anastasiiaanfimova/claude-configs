@@ -163,12 +163,23 @@ Print the commit hash:
 git -C /tmp/claude-configs log --oneline -1
 ```
 
-### Step 5 — Write diary entry
+### Step 5 — Update README.md if hooks changed
+
+If `settings/settings.json` was among the changed files, read the current `settings.json` hooks and verify that `/tmp/claude-configs/README.md` matches:
+
+- Hook names and count ("Four hooks" / "Five hooks" etc.)
+- Hook descriptions — what each command does, sync/async notes
+- Any hooks added or removed since last sync
+
+Edit `/tmp/claude-configs/README.md` directly if anything is out of date. Stage the change — it will be included in the commit at Step 4 (or as a follow-up commit if settings were already pushed).
+
+### Step 6 — Write diary entry
 
 `mcp__mempalace__mempalace_diary_write` with compact AAAK entry:
 - Which files changed
 - Commit hash
 - Any anonymizations applied (e.g. "replaced <project>×3")
+- Whether README was updated
 
 Topic: `claude-configs.sync`
 

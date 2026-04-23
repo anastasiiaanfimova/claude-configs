@@ -14,30 +14,25 @@ This setup layers three independent memory systems on top of Claude Code. Each s
 
 None of these overlap: MemPalace is about the agent knowing the user, code-review-graph is about knowing the codebase, auto-memory is about in-project scratchpad facts.
 
-Since MemPalace captures everything important across sessions, raw `.jsonl` session logs are just disk clutter. `cleanup_history.sh` (run as a `Stop` hook) deletes them after 7 days and removes orphaned subagent directories, keeping `~/.claude/projects/` from growing unbounded. The `memory/` directory is always preserved.
+Since MemPalace captures everything important across sessions, raw `.jsonl` session logs are just disk clutter. Run `claude-cleanup` (a shell alias) manually whenever you want to prune logs older than 30 days. The `memory/` directory is always preserved.
 
 ## What's inside
 
 ### `settings/settings.json`
 
-Five hooks that wire the memory stack into Claude Code:
+Four hooks that wire the memory stack into Claude Code:
 
 ```
 UserPromptSubmit → MemPalace session-start
                    Loads relevant memories into context before each message.
                    Without this, MemPalace exists but Claude never reads it.
 
-Stop             → [1] cleanup_history.sh (async)
-                       Deletes .jsonl session logs older than 7 days.
-                       Safe to do because MemPalace already captured what matters.
-                   [2] MemPalace stop hook (sync)
-                       Claude writes a diary entry + KG facts at end of session.
-                       This is how memories actually get saved.
-                   (Hook [2] is synchronous — it blocks until Claude writes the
-                   diary. Hook [1] runs async in the background.)
+Stop             → MemPalace stop hook (sync)
+                   Claude writes a diary entry + KG facts at end of session.
+                   This is how memories actually get saved.
 
 StopFailure      → MemPalace stop hook (sync, crash path)
-                   Same as Stop [2], but fires when the session ends due to an
+                   Same as Stop, but fires when the session ends due to an
                    API error (rate limit, auth failure, etc.). Prepends a crash
                    notice to the diary prompt so Claude records what happened
                    before the session dies.
