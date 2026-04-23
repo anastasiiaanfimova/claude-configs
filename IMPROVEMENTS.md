@@ -25,11 +25,10 @@ _Last updated: 2026-04-23 | Diary range: 2026-04-18 – 2026-04-23_
 | 2 | Починить auth для zozh sync — Google Fit + Zepp токены протухли (~Apr 5), sync не работает | Diary 2026-04-19 | MEDIUM |
 | 3 | Попробовать HTTP hooks (новый тип, фев 2026) — POST на endpoint + JSON обратно; полезно для webhook интеграций | Web research | MEDIUM |
 | 4 | Async hooks для non-blocking операций — diary write и backup запускать фоном не блокируя Claude | Web research (янв 2026) | MEDIUM |
-| 5 | Настроить расписание для `mempalace-backup` — сейчас экспорт только ручной | Diary 2026-04-16 | MEDIUM |
-| 6 | Разобраться с PreCompact хуком: блокирует первый compact если diary не записан — снизить `SAVE_INTERVAL` или добавить auto-write при старте | Diary 2026-04-23 | MEDIUM |
-| 7 | Изучить `StopFailure` hook event (новый) — обрабатывать неудачные завершения сессии | Web research | LOW |
-| 8 | Изучить Managed Agents API (public beta) — fully managed agent harness с sandboxing и SSE streaming | Web research | LOW |
-| 9 | Изучить `ant CLI` — command-line клиент для Claude API с YAML versioning ресурсов | Web research | LOW |
+| 5 | Разобраться с PreCompact хуком: блокирует первый compact если diary не записан — снизить `SAVE_INTERVAL` или добавить auto-write при старте | Diary 2026-04-23 | MEDIUM |
+| 6 | Изучить `StopFailure` hook event (новый) — обрабатывать неудачные завершения сессии | Web research | LOW |
+| 7 | Изучить Managed Agents API (public beta) — fully managed agent harness с sandboxing и SSE streaming | Web research | LOW |
+| 8 | Изучить `ant CLI` — command-line клиент для Claude API с YAML versioning ресурсов | Web research | LOW |
 
 ---
 
