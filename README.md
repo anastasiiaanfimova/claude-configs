@@ -20,26 +20,27 @@ Since MemPalace captures everything important across sessions, raw `.jsonl` sess
 
 ### `settings/settings.json`
 
-Four hooks that wire the memory stack into Claude Code:
+Five hooks that wire the memory stack into Claude Code:
 
 ```
 UserPromptSubmit → MemPalace session-start
                    Loads relevant memories into context before each message.
                    Without this, MemPalace exists but Claude never reads it.
 
-Stop             → [1] cleanup_history.sh
+Stop             → [1] cleanup_history.sh (async)
                        Deletes .jsonl session logs older than 7 days.
                        Safe to do because MemPalace already captured what matters.
-                   [2] MemPalace stop hook
+                   [2] MemPalace stop hook (sync)
                        Claude writes a diary entry + KG facts at end of session.
                        This is how memories actually get saved.
-                   [3] MemPalace snapshot export (async)
-                       Exports all palace drawers to human-readable Markdown in
-                       ~/.mempalace/export/, then git commits + pushes to a private
-                       backup repo. ChromaDB is binary — this creates a browsable,
-                       git-tracked copy of everything MemPalace knows.
-                   (One event, three commands. Hook [2] is synchronous — it blocks
-                   until Claude writes the diary. Hooks [1] and [3] run async.)
+                   (Hook [2] is synchronous — it blocks until Claude writes the
+                   diary. Hook [1] runs async in the background.)
+
+StopFailure      → MemPalace stop hook (sync, crash path)
+                   Same as Stop [2], but fires when the session ends due to an
+                   API error (rate limit, auth failure, etc.). Prepends a crash
+                   notice to the diary prompt so Claude records what happened
+                   before the session dies.
 
 PreCompact       → MemPalace precompact hook
                    Before Claude Code compresses the context window, important
