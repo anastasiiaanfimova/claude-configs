@@ -163,15 +163,17 @@ Print the commit hash:
 git -C /tmp/claude-configs log --oneline -1
 ```
 
-### Step 5 — Update README.md if hooks changed
+### Step 5 — Update README.md if anything changed
 
-If `settings/settings.json` was among the changed files, read the current `settings.json` hooks and verify that `/tmp/claude-configs/README.md` matches:
+If **any** files were updated in this sync run, read the current local config state and verify that `/tmp/claude-configs/README.md` is consistent:
 
-- Hook names and count ("Four hooks" / "Five hooks" etc.)
-- Hook descriptions — what each command does, sync/async notes
-- Any hooks added or removed since last sync
+- **Hooks** (`settings.json` changed): hook names, count, sync/async notes — must match actual hooks
+- **Agents** (agents/ changed): agent table rows — names, descriptions, models
+- **Skills** (skills/ changed): skill table rows — names, what they do
+- **Memory stack** (any change): descriptions of MemPalace, code-review-graph, auto-memory still accurate
+- **Credentials / vault** (CLAUDE.md changed): vault names, workflow still accurate
 
-Edit `/tmp/claude-configs/README.md` directly if anything is out of date. Stage the change — it will be included in the commit at Step 4 (or as a follow-up commit if settings were already pushed).
+Edit `/tmp/claude-configs/README.md` directly for any outdated sections. Stage the change — include in the same commit or push as a follow-up if settings were already committed.
 
 ### Step 6 — Write diary entry
 
