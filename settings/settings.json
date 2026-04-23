@@ -33,11 +33,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.claude/cleanup_history.sh",
-            "async": true
-          },
-          {
-            "type": "command",
             "command": "MEMPALACE_AGENT=claude MEMPALACE_PALACE_PATH=$(bash ~/.mempalace/palace_detect.sh) cat | ~/.mempalace/venv/bin/python3 ~/.mempalace/hook_agent.py stop"
           }
         ]
