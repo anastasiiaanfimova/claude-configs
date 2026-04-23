@@ -3,15 +3,16 @@
 Wrapper for mempalace hooks that injects agent name into block reasons.
 
 Usage (in Claude Code settings hooks):
-  Stop:       MEMPALACE_AGENT=claw cat | python3 ~/.mempalace/hook_agent.py stop
-  PreCompact: MEMPALACE_AGENT=claw cat | python3 ~/.mempalace/hook_agent.py precompact
+  Stop:        MEMPALACE_AGENT=claw cat | python3 ~/.mempalace/hook_agent.py stop
+  StopFailure: MEMPALACE_AGENT=claw cat | python3 ~/.mempalace/hook_agent.py stopfailure
+  PreCompact:  MEMPALACE_AGENT=claw cat | python3 ~/.mempalace/hook_agent.py precompact
 
 Reads MEMPALACE_AGENT from env (falls back to 'claude').
 Passes stdin to mempalace hook, then appends the agent name to any block reason
 so Claude knows which diary wing to write to.
 
-For precompact: blocks once per session (so Claude can write diary), then allows
-on subsequent calls so compaction can actually proceed.
+For precompact: always allows so compaction can proceed.
+For stopfailure: reuses stop hook but prepends crash notice to the block reason.
 """
 import json
 import os
@@ -31,9 +32,12 @@ if hook == "precompact":
     print(json.dumps({}))
     sys.exit(0)
 
-# For all other hooks: delegate to mempalace
+# stopfailure: reuse stop hook but flag the crash in the reason
+crash_prefix = "[SESSION CRASHED — API error] " if hook == "stopfailure" else ""
+mempalace_hook = "stop" if hook == "stopfailure" else hook
+
 result = subprocess.run(
-    [sys.executable, "-m", "mempalace", "hook", "run", "--hook", hook, "--harness", "claude-code"],
+    [sys.executable, "-m", "mempalace", "hook", "run", "--hook", mempalace_hook, "--harness", "claude-code"],
     input=data,
     capture_output=True,
 )
@@ -44,6 +48,8 @@ except (json.JSONDecodeError, ValueError):
     out = {}
 
 if "reason" in out:
-    out["reason"] = f'mempalace (agent="{agent}"): {out["reason"]}'
+    out["reason"] = f'mempalace (agent="{agent}"): {crash_prefix}{out["reason"]}'
+elif crash_prefix:
+    out["reason"] = f'mempalace (agent="{agent}"): {crash_prefix}Write a brief diary entry noting the session ended with an API error, then let the session end.'
 
 print(json.dumps(out))
