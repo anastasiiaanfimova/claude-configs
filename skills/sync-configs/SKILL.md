@@ -32,7 +32,7 @@ Local:  /tmp/claude-configs
 | `~/.claude/settings.json` | `settings/settings.json` |
 | `~/.claude/agents/*.md` | `agents/` |
 | `~/.mempalace/hook_agent.py` | `hooks/hook_agent.py` |
-| `~/.mempalace/palace_detect.sh` | `palace_detect.sh` |
+| `~/.mempalace/palace_detect.sh` | `scripts/palace_detect.sh` |
 
 **Skills** — only the ones in this allowlist are synced (others may contain private project references):
 ```

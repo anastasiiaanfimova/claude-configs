@@ -22,15 +22,15 @@ settings.local.json
 !CLAUDE.md
 !resources.md
 !review-notes.md
-!cleanup_history.sh
 !settings/
 !settings/**
 !agents/
 !agents/**
 !commands/
 !commands/**
-!palace_detect.sh
 !hooks/
 !hooks/**
 !skills/
 !skills/**
+!scripts/
+!scripts/**
