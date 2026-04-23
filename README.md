@@ -178,6 +178,33 @@ What it does:
 
 **Requires:** `mempalace` configured in the project's `.mcp.json` (see MCP project isolation above).
 
+
+### `skills/`
+
+Slash command skills — invokable with `/skill-name` in any Claude Code session. Each skill defines a multi-step automated workflow that Claude executes inline (with full tool access and context), on demand.
+
+Skills differ from agents: agents are subprocesses dispatched for isolated subtasks; skills run in the main conversation. Use skills for repeatable workflows that need judgment, tool calls, and cross-referencing across multiple data sources.
+
+**Install:** copy any skill directory to `~/.claude/skills/` — Claude Code auto-discovers them on startup.
+
+> **Note:** Skills reference project-specific config (TMS project IDs, analytics project IDs, Notion page IDs). Replace `<YOUR_*>` placeholders in each skill's `SKILL.md` and reference files before use.
+
+#### QA skills
+
+Built for QA work on an AI SaaS product — backend + web, analytics events, async generation pipelines. Three skills cover the core QA loop: write TCs, find gaps, improve the toolset.
+
+| Skill | What it does |
+|---|---|
+| `tc-create` | Creates test cases in Testiny following project naming conventions, priority rules (based on analytics event volume), and Slate.js step format. Verifies all data against a real source — analytics platform, backend code, or monitoring. Never invents steps. |
+| `tc-gap` | Gap analysis: fetches all existing TCs from Testiny, collects signal sources per project (analytics events for web, backend handler map for backend, admin panel pages for admin), cross-references, and outputs a prioritized gap report. Auto-updates a Notion page; preserves manually added notes. |
+| `qa-tooling` | Tooling audit: reads MemPalace diary across recent sessions (last 14 days), identifies recurring pain points and manual steps, and suggests new skills, agents, or automations to build. Focused on "what should we build next?" — not a session summary. |
+
+#### Claude skills
+
+| Skill | What it does |
+|---|---|
+| `claude-tooling` | Cross-project Claude tooling audit. Reads MemPalace across all project wings + diary, searches the web for new Claude Code / Anthropic updates, compares against an existing `IMPROVEMENTS.md` in a GitHub repo, and pushes an updated file with status tracking (🔄 pending / ✅ done / 🆕 new / 📡 new in Claude). Fully autonomous — auto-commits and pushes. No user input needed. |
+
 ## How to use
 
 **Agents** — copy any agent file to `~/.claude/agents/`:
