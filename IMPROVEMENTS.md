@@ -9,9 +9,6 @@ _Last updated: 2026-04-23 | Diary range: 2026-04-18 – 2026-04-23_
 | # | Идея | Источник | Приоритет |
 |---|---|---|---|
 | 1 | Обновить `statusline.sh` — читать `.effort` из stdin JSON когда anthropics/claude-code#40261 будет закрыт | MemPalace (упомянуто 3+ раз), pending issue #40261 | HIGH |
-| 2 | ~~Создать `CLAUDE.md` в рабочих проектах~~ | MemPalace diary 2026-04-15 | — |
-
-> #2 закрыт: все проекты уже имеют CLAUDE.md (Edarium, ZenCreator/frontend/backend/admin). Создан корневой ~/ZenCreator/CLAUDE.md (2026-04-23) ✅
 
 ---
 
@@ -23,6 +20,7 @@ _Last updated: 2026-04-23 | Diary range: 2026-04-18 – 2026-04-23_
 |---|---|---|
 | 1 | **TDD.Guard quality gate хуки** — `PostToolUse` запускает тесты/lint автоматически. Паттерн: block Write если тесты падают (nizos/tdd-guard) + Prettier + Jest + tsc (ChrisWiles pattern) | Когда начнётся написание тестового фреймворка и автотестов |
 | 2 | **`.claude/commands/` директория** — slash commands для повторяющихся воркфлоу (по образцу ChrisWiles: `/ticket`, `/daily`) | Когда накопятся повторяющиеся многошаговые задачи |
+| 3 | **`NOTION_API_KEY` в zencreator vault** — Notion сейчас работает через remote MCP OAuth, ключ не нужен. Актуально если появится сценарий с прямыми API запросами из скриптов или агентов | Конкретный сценарий прямого API доступа |
 
 ---
 
@@ -32,14 +30,12 @@ _Last updated: 2026-04-23 | Diary range: 2026-04-18 – 2026-04-23_
 
 | # | Идея | Источник | Приоритет |
 |---|---|---|---|
-| 1 | Добавить `NOTION_API_KEY` + `AMPLITUDE_API_KEY` в zencreator vault — pending с 2026-04-23 | Diary 2026-04-23 | HIGH |
-| 2 | Починить auth для zozh sync — Google Fit + Zepp токены протухли (~Apr 5), sync не работает | Diary 2026-04-19 | MEDIUM |
-| 3 | Попробовать HTTP hooks (новый тип, фев 2026) — POST на endpoint + JSON обратно; полезно для webhook интеграций | Web research | MEDIUM |
-| 4 | Async hooks для non-blocking операций — diary write и backup запускать фоном не блокируя Claude | Web research (янв 2026) | MEDIUM |
-| 5 | Разобраться с PreCompact хуком: блокирует первый compact если diary не записан — снизить `SAVE_INTERVAL` или добавить auto-write при старте | Diary 2026-04-23 | MEDIUM |
-| 6 | Изучить `StopFailure` hook event (новый) — обрабатывать неудачные завершения сессии | Web research | LOW |
-| 7 | Изучить Managed Agents API (public beta) — fully managed agent harness с sandboxing и SSE streaming | Web research | LOW |
-| 8 | Изучить `ant CLI` — command-line клиент для Claude API с YAML versioning ресурсов | Web research | LOW |
+| 1 | Починить auth для zozh sync — Google Fit + Zepp токены протухли (~Apr 5), sync не работает | Diary 2026-04-19 | MEDIUM |
+| 2 | Попробовать HTTP hooks (новый тип, фев 2026) — POST на endpoint + JSON обратно; полезно для webhook интеграций | Web research | MEDIUM |
+| 3 | Async hooks для non-blocking операций — diary write и backup запускать фоном не блокируя Claude | Web research (янв 2026) | MEDIUM |
+| 4 | Изучить `StopFailure` hook event (новый) — обрабатывать неудачные завершения сессии | Web research | LOW |
+| 5 | Изучить Managed Agents API (public beta) — fully managed agent harness с sandboxing и SSE streaming | Web research | LOW |
+| 6 | Изучить `ant CLI` — command-line клиент для Claude API с YAML versioning ресурсов | Web research | LOW |
 
 ---
 
@@ -71,3 +67,6 @@ _Last updated: 2026-04-23 | Diary range: 2026-04-18 – 2026-04-23_
 - palace_detect.sh: MEMPALACE_PALACE_PATH выставляется перед каждым хуком (2026-04-16) ✅
 - Config #2–5: hermes MCP, settings.local.json, python3, Openclaw gitignore — всё уже было в порядке (verified 2026-04-23) ✅
 - CLAUDE.md в рабочих проектах: Edarium + ZenCreator subprojects уже имели, создан ~/ZenCreator/CLAUDE.md (2026-04-23) ✅
+- PreCompact хук: hook_agent.py всегда разрешает compact (возвращает `{}`), больше не блокирует (verified 2026-04-23) ✅
+- AMPLITUDE_API_KEY: уже в zencreator vault (verified 2026-04-23) ✅
+- NOTION_API_KEY: не нужен — Notion работает через remote MCP OAuth (verified 2026-04-23) ✅
