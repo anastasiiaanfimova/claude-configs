@@ -9,9 +9,20 @@ _Last updated: 2026-04-23 | Diary range: 2026-04-18 – 2026-04-23_
 | # | Идея | Источник | Приоритет |
 |---|---|---|---|
 | 1 | Обновить `statusline.sh` — читать `.effort` из stdin JSON когда anthropics/claude-code#40261 будет закрыт | MemPalace (упомянуто 3+ раз), pending issue #40261 | HIGH |
-| 2 | Создать `CLAUDE.md` файлы в рабочих проектах — пока только глобальный | MemPalace diary 2026-04-15 | MEDIUM |
-| 3 | TDD.Guard quality gate хуки — `PostToolUse` запускает тесты/lint автоматически | MemPalace, awesome-claude-code review 2026-04-15 | MEDIUM |
-| 4 | Добавить `.claude/commands/` директорию когда появятся повторяющиеся воркфлоу | MemPalace diary 2026-04-15 | LOW |
+| 2 | ~~Создать `CLAUDE.md` в рабочих проектах~~ | MemPalace diary 2026-04-15 | — |
+
+> #2 закрыт: все проекты уже имеют CLAUDE.md (Edarium, ZenCreator/frontend/backend/admin). Создан корневой ~/ZenCreator/CLAUDE.md (2026-04-23) ✅
+
+---
+
+## ⏸ Отложено — вернуться позже
+
+Идеи любопытные, но преждевременные для текущей роли QA (тестировщик, не разработчик).
+
+| # | Идея | Когда актуально |
+|---|---|---|
+| 1 | **TDD.Guard quality gate хуки** — `PostToolUse` запускает тесты/lint автоматически. Паттерн: block Write если тесты падают (nizos/tdd-guard) + Prettier + Jest + tsc (ChrisWiles pattern) | Когда начнётся написание тестового фреймворка и автотестов |
+| 2 | **`.claude/commands/` директория** — slash commands для повторяющихся воркфлоу (по образцу ChrisWiles: `/ticket`, `/daily`) | Когда накопятся повторяющиеся многошаговые задачи |
 
 ---
 
@@ -58,7 +69,5 @@ _Last updated: 2026-04-23 | Diary range: 2026-04-18 – 2026-04-23_
 - MemPalace project isolation: MCP перенесён из global → per-project .mcp.json (2026-04-16) ✅
 - Global pre-commit hook с forbidden words → защищает публичные репо (2026-04-23) ✅
 - palace_detect.sh: MEMPALACE_PALACE_PATH выставляется перед каждым хуком (2026-04-16) ✅
-- Config #2: hermes MCP уже в ~/Hermes/.mcp.json, не в global (verified 2026-04-23) ✅
-- Config #3: settings.local.json не существует нигде — ~/Hermes/.claude/settings.json чистый (verified 2026-04-23) ✅
-- Config #4: все хуки используют python3 с полным путём venv (verified 2026-04-23) ✅
-- Config #5: Openclaw не git-репо, .mcp.json gitignore не нужен (verified 2026-04-23) ✅
+- Config #2–5: hermes MCP, settings.local.json, python3, Openclaw gitignore — всё уже было в порядке (verified 2026-04-23) ✅
+- CLAUDE.md в рабочих проектах: Edarium + ZenCreator subprojects уже имели, создан ~/ZenCreator/CLAUDE.md (2026-04-23) ✅
