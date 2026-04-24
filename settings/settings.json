@@ -87,5 +87,6 @@
       }
     }
   },
-  "theme": "dark-ansi"
+  "theme": "dark-ansi",
+  "model": "sonnet"
 }
