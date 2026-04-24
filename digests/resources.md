@@ -45,6 +45,11 @@ Worth checking periodically for new patterns and updates.
 - [confident-ai/deepeval](https://github.com/confident-ai/deepeval) — pytest-like framework for LLM eval; 50+ metrics (G-Eval, hallucination detection)
 - [promptfoo/promptfoo](https://github.com/promptfoo/promptfoo) — prompt testing + red-teaming + model comparison; GitHub Actions integration
 
+### Generative model testing (image & video)
+- [Hugging Face Diffusers — evaluation docs](https://huggingface.co/docs/diffusers/conceptual/evaluation) — official guide: FID, CLIP score, LPIPS with code; updates alongside Diffusers releases
+- [ziqihuangg/Awesome-Evaluation-of-Visual-Generation](https://github.com/ziqihuangg/Awesome-Evaluation-of-Visual-Generation) — curated list for image/video gen eval: metrics, benchmarks, human eval; active
+- [Lightning-AI/torchmetrics](https://github.com/Lightning-AI/torchmetrics) — standard library for vision metrics (FID, CLIP, LPIPS, SSIM in one place)
+
 ### Agent engineering & case studies
 - [Simon Willison's Weblog](https://simonwillison.net/) — best individual blog on practical AI; near-daily posts with real-world patterns
 - [Latent Space](https://www.latent.space/) — newsletter + podcast on AI engineering; interviews with teams shipping agents in prod
@@ -66,6 +71,28 @@ Worth checking periodically for new patterns and updates.
 - [Playwright releases](https://github.com/microsoft/playwright/releases) — changelog; new features ship frequently
 - [mxschmitt/awesome-playwright](https://github.com/mxschmitt/awesome-playwright) — ecosystem of tools around Playwright
 - [atinfo/awesome-test-automation](https://github.com/atinfo/awesome-test-automation) — meta-list by language/framework
+
+### Manual testing — API clients & helpers
+- [usebruno/bruno](https://github.com/usebruno/bruno) — git-native API client; collections as plain-text files (versioned in repo), offline; main Postman alternative after its cloud-only move
+- [hoppscotch/hoppscotch](https://github.com/hoppscotch/hoppscotch) — web-based open-source API client, 75K+ stars; no desktop install
+- [mountain-loop/yaak](https://github.com/mountain-loop/yaak) — new client from the Insomnia author; speed-focused, privacy-first
+- [requestly/requestly](https://github.com/requestly/requestly) — browser extension: HTTP interception, header modification, API mocking without touching code
+- [webhook.site](https://webhook.site/) — inspect webhook payloads without tunneling; complements ngrok for quick checks
+
+### Automation — backend (framework building from scratch)
+- [vitest-dev/vitest](https://github.com/vitest-dev/vitest) — Node/TS runner default in 2026; native ESM, Jest-compatible API, faster
+- [pytest-dev/pytest-asyncio](https://github.com/pytest-dev/pytest-asyncio) — must-have plugin for async Python API tests
+- [pact-foundation/pact-specification](https://github.com/pact-foundation/pact-specification) — consumer-driven contract testing; microservices standard
+- [schemathesis/schemathesis](https://github.com/schemathesis/schemathesis) — property-based API testing from OpenAPI/GraphQL spec; finds edge cases automatically
+- [testcontainers/testcontainers-node](https://github.com/testcontainers/testcontainers-node) — real Postgres/Redis/S3 in Docker inside tests; Java and Python variants available; de-facto standard over DB mocks
+- [wiremock/wiremock](https://github.com/wiremock/wiremock) — mock external HTTP services (Stripe-mock/S3-mock style)
+- [mockoon/mockoon](https://github.com/mockoon/mockoon) — desktop GUI for local mocks when no-code preferred
+- [stoplightio/prism](https://github.com/stoplightio/prism) — mock server auto-generated from OpenAPI
+
+### Automation — frontend (framework building from scratch)
+- [mswjs/msw](https://github.com/mswjs/msw) — service-worker-based API mocking for frontend tests; works in Jest/Vitest/Playwright and browser; sits next to fetch, doesn't break prod code
+- [BrowserStack Percy](https://www.browserstack.com/percy) — visual regression; AI review filters rendering noise
+- [applitools.com](https://applitools.com/) — visual testing with Ultrafast Grid for cross-browser snapshots
 
 ### Async pipelines & resilience testing
 - [kubeshop/tracetest](https://github.com/kubeshop/tracetest) — trace-based tests via OpenTelemetry; assertions on async side effects (queues, webhooks) — fits media-generation pipelines
