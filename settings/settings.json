@@ -86,5 +86,6 @@
         "repo": "warpdotdev/claude-code-warp"
       }
     }
-  }
+  },
+  "theme": "dark-ansi"
 }

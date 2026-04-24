@@ -50,53 +50,62 @@ SessionStart     → code-review-graph check
 
 ## Credential management
 
-API keys and tokens never go into shell files (`~/.zshrc`, `~/.zshenv`) or `.env` files. Instead they live in [agent-vault](https://github.com/Infisical/agent-vault) — an encrypted local credential proxy for AI agents.
+API keys and tokens never go into shell files (`~/.zshrc`, `~/.zshenv`) or `.env` files. Instead they live in [Infisical](https://infisical.com) — a secrets manager with CLI injection.
 
-**Why agent-vault instead of env files:** env files get committed by accident, end up in logs, and leak through shell history. agent-vault stores credentials AES-256-GCM encrypted on disk and injects them only when explicitly invoked.
+**Why Infisical instead of env files:** env files get committed by accident, end up in logs, and leak through shell history. Infisical stores secrets centrally (cloud or self-hosted) and injects them per-command into the process environment only.
 
 ### How it works
 
-Credentials are grouped into vaults per project or scope:
+Secrets are grouped into projects and folders (e.g. `Personal/myproject/`, `Work/clientA/`). CLI auth uses a **machine identity** (Universal Auth) — Client ID + Client Secret stored in the macOS Keychain, exchanged for a fresh access token on every run so the session never expires.
+
+A shell helper fetches the token:
 
 ```bash
-agent-vault vault credential set KEY=value --vault myproject
-agent-vault vault credential set KEY=value           # default vault
+# ~/.zshrc
+_infisical_token() {
+  local client_id=$(security find-generic-password -a "$USER" -s infisical-client-id -w)
+  local client_secret=$(security find-generic-password -a "$USER" -s infisical-client-secret -w)
+  infisical login --method=universal-auth \
+    --client-id="$client_id" --client-secret="$client_secret" \
+    --plain --silent
+}
 ```
 
-To run Claude with credentials injected as env vars:
+Then run Claude with secrets injected as env vars:
 
 ```bash
-agent-vault vault run --no-mitm --vault myproject -- claude
+INFISICAL_TOKEN=$(_infisical_token) infisical run \
+  --projectId="$INFISICAL_PROJECT_WORK" --path="/myproject" -- claude
 ```
 
-`--no-mitm` disables the HTTPS MITM proxy so Claude connects to `api.anthropic.com` directly. Without it, agent-vault intercepts all HTTPS traffic and blocks any host that doesn't have a configured broker service — which causes a 403 error when Claude tries to reach Anthropic. The `--no-mitm` flag is the right default unless you specifically need the proxy to inject credentials into outbound API calls.
+### Smart shell function
 
-Claude still gets `AGENT_VAULT_SESSION_TOKEN` set, so scripts in that session can call `agent-vault vault credential get` to read credentials. The raw values never appear in shell config or command history.
-
-The typical pattern for a project that needs credentials at dev time but not in the Claude session itself (e.g. a Vite app that reads API keys at startup):
+A `claude()` function in `~/.zshrc` auto-detects the project from `pwd` and injects the right folder:
 
 ```bash
-# dev.sh — reads from vault at process start, exports for Vite
-export MY_API_KEY=$(agent-vault vault credential get --vault myproject MY_API_KEY)
-exec npx vite "$@"
+claude() {
+  case "$PWD" in
+    $HOME/ProjectA*) INFISICAL_TOKEN=$(_infisical_token) infisical run \
+      --projectId="$INFISICAL_PROJECT_WORK" --path="/projectA" -- command claude "$@" ;;
+    $HOME/Claude/mytool*) INFISICAL_TOKEN=$(_infisical_token) infisical run \
+      --projectId="$INFISICAL_PROJECT_PERSONAL" --path="/mytool" -- command claude "$@" ;;
+    *) command claude "$@" ;;
+  esac
+}
 ```
 
-Run this instead of `npm run dev`. Claude doesn't need the vault proxy; only the dev script does.
+Folders outside the match list run plain `claude` without injection. Explicit aliases (`claude-projecta`, `claude-mytool`) cover cases where you want a specific context from any directory.
 
-### Shell aliases
-
-A convenient way to wire this up in `~/.zshrc`:
+### Adding secrets
 
 ```bash
-alias claude='agent-vault vault run --no-mitm -- claude'
-alias claude-myproject='agent-vault vault run --no-mitm --vault myproject -- claude'
+infisical secrets set --projectId="$INFISICAL_PROJECT_WORK" \
+  --path="/myproject" KEY=value
 ```
-
-The interactive vault selector appears on first run if no `--vault` is specified. To skip it: always use `--vault` or set the active vault with `agent-vault vault use default`.
 
 ### CLAUDE.md enforces the rule
 
-The global `CLAUDE.md` instructs Claude to never save API keys to shell files — always offer `agent-vault vault credential set` instead. This means even if the user asks Claude to "save this token", Claude will redirect to the vault.
+The global `CLAUDE.md` instructs Claude to never save API keys to shell files — always offer to add them to the right Infisical project/folder instead. Even if the user asks Claude to "save this token", Claude will redirect to Infisical.
 
 ## MCP project isolation
 
@@ -115,7 +124,7 @@ If Claude is launched from any other directory, MemPalace is simply unavailable 
 
 ### `CLAUDE.md`
 
-The **global** `~/.claude/CLAUDE.md` contains the MemPalace protocol and credential management rules. The MemPalace section instructs Claude to call `mempalace_status` at session start, search before answering about people/projects, and write diary at session end. The credential section instructs Claude to never write API keys to shell files and always redirect to agent-vault instead.
+The **global** `~/.claude/CLAUDE.md` contains the MemPalace protocol and credential management rules. The MemPalace section instructs Claude to call `mempalace_status` at session start, search before answering about people/projects, and write diary at session end. The credential section instructs Claude to never write API keys to shell files and always redirect to the right Infisical project/folder instead.
 
 The `code-review-graph` block that was here previously is **project-specific** — it belongs in a project's own `CLAUDE.md` or `.claude/CLAUDE.md`, not in the global file. Copy it into any project where you've run `code-review-graph build`.
 
