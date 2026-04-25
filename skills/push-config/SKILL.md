@@ -46,19 +46,17 @@ Each skill is synced as `skills/<name>/SKILL.md`.
 
 ### Anonymization
 
-Apply these replacements to **every file before writing to repo**:
+Replacement rules and the privacy-scan pattern live in a **local-only** file (never synced):
 
-| Pattern | Replace with |
-|---|---|
-| `/Users/<user>/` | `/Users/<user>/` |
-| `~/<user>/` | `~/<user>/` |
-| `<email>` | `<email>` |
-| `<project>` (case-insensitive) | `<project>` |
-| `<project>` (case-insensitive) | `<project>` |
-| `<project>` | `<project>` |
-| `--vault <project>` | `--vault <project>` |
-| `--vault <project>` | `--vault <project>` |
-| `--vault <project>` | `--vault <project>` |
+```
+~/.claude/skills/push-config/docs/replacements.md
+```
+
+To add a new private project name, append a line:
+```
+(?i)newproject → <project>
+```
+Then update the `SCAN:` line at the bottom of that file to include it.
 
 **Never anonymize:** `openclaw`, `hermes`, `claude`, `mempalace`, `anastasiiaanfimova` (GitHub owner).
 
@@ -81,23 +79,23 @@ fi
 Use this Python one-liner for each file. Run it as a function — apply to every file before diffing:
 
 ```python
-# anon.py — apply to stdin, print to stdout
-import sys, re
+# anon.py — reads patterns from local docs/replacements.md, applies to stdin
+import sys, re, os
+
+repl_file = os.path.expanduser('~/.claude/skills/push-config/docs/replacements.md')
+replacements = []
+with open(repl_file) as f:
+    for line in f:
+        line = line.strip()
+        if not line or line.startswith('#') or line.startswith('SCAN:'):
+            continue
+        if ' → ' in line:
+            pat, rep = line.split(' → ', 1)
+            replacements.append((pat.strip(), rep.strip()))
 
 text = sys.stdin.read()
-replacements = [
-    (r'/Users/<user>/', '/Users/<user>/'),
-    (r'~/<user>/', '~/<user>/'),
-    (r'anastasiia\.anfimova@gmail\.com', '<email>'),
-    (r'(?i)<project>', '<project>'),
-    (r'(?i)<project>', '<project>'),
-    (r'<project>', '<project>'),
-    (r'--vault <project>', '--vault <project>'),
-    (r'--vault <project>', '--vault <project>'),
-    (r'--vault <project>', '--vault <project>'),
-]
-for pattern, repl in replacements:
-    text = re.sub(pattern, repl, text)
+for pat, rep in replacements:
+    text = re.sub(pat, rep, text)
 print(text, end='')
 ```
 
@@ -157,16 +155,17 @@ done
 Before staging anything, scan all repo files for private names that should have been anonymized:
 
 ```bash
-LEAKS=$(grep -rn \
-  "<project>\|<project>\|<project>\|<project>\|<project>\|/Users/anastasiia\|anastasiia\.anfimova" \
-  /tmp/claude-configs/ \
+REPL_FILE="$HOME/.claude/skills/push-config/docs/replacements.md"
+SCAN_PATTERN=$(grep "^SCAN:" "$REPL_FILE" | sed 's/^SCAN: *//')
+
+LEAKS=$(grep -rn "$SCAN_PATTERN" /tmp/claude-configs/ \
   --include="*.md" --include="*.json" --include="*.py" --include="*.sh" \
   2>/dev/null | grep -v ".git" | grep -v "anastasiiaanfimova")
 
 if [ -n "$LEAKS" ]; then
   echo "PRIVACY LEAK DETECTED — aborting push:"
   echo "$LEAKS"
-  echo "Fix anon.py patterns and re-run."
+  echo "Fix replacements.md patterns and re-run."
   exit 1
 fi
 echo "Privacy scan: clean"

@@ -32,5 +32,6 @@ settings.local.json
 !hooks/**
 !skills/
 !skills/**
+skills/push-config/docs/
 !scripts/
 !scripts/**
