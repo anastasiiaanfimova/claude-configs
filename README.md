@@ -109,16 +109,26 @@ The global `CLAUDE.md` instructs Claude to never save API keys to shell files �
 
 ## MCP project isolation
 
-MemPalace is configured **per project** via `.mcp.json`, not globally. Each project directory has its own palace so Claude running from that directory only sees memories for that project — no cross-contamination.
+MemPalace is configured **per project** via `.mcp.json`, not globally. Claude running in a project directory only sees memories for that project — no cross-contamination.
+
+Two tiers of isolation:
+
+**Shared palace** — sub-projects inside `~/Claude/` share a single palace. No `--palace` flag; `palace_detect.sh` walks up the directory tree to find the nearest `.mcp.json` and falls back to `~/.mempalace/palace`.
 
 ```
-~/Claude/.mcp.json     → mempalace → ~/.mempalace/palace      (main)
-~/Openclaw/.mcp.json   → mempalace → ~/.openclaw/mempalace/palace
-~/Hermes/.mcp.json     → mempalace → ~/.hermes/mempalace
-~/MyProject/.mcp.json  → mempalace → ~/.myproject/mempalace
+~/Claude/.mcp.json           → mempalace (no --palace) → ~/.mempalace/palace
+~/Claude/tg-reader/.mcp.json → mempalace (no --palace) → ~/.mempalace/palace  (inherits)
+~/Claude/hermes/.mcp.json    → mempalace (no --palace) → ~/.mempalace/palace  (inherits)
 ```
 
-The server is always named `mempalace` in each project, so hooks and tool permissions (`mcp__mempalace__*`) are identical everywhere. The only difference is which palace they point to.
+**Separate palace** — top-level independent projects each get their own isolated palace:
+
+```
+~/Hermes/.mcp.json     → mempalace --palace ~/.hermes/mempalace
+~/MyProject/.mcp.json  → mempalace --palace ~/.myproject/mempalace
+```
+
+The server is always named `mempalace` in each project, so hooks and tool permissions (`mcp__mempalace__*`) are identical everywhere. The `/setup` command automatically picks the right tier based on whether the current directory is inside `~/Claude/`.
 
 If Claude is launched from any other directory, MemPalace is simply unavailable — by design.
 
@@ -167,14 +177,13 @@ Agents for separate self-hosted projects. These are **project-scoped** — not i
 | Agent | What it does | Model |
 |-------|-------------|-------|
 | `hermes-admin` | [Hermes](https://github.com/anastasiiaanfimova/hermes-docker) config — Docker setup, channels, Infisical secrets, entrypoint debugging. | sonnet |
-| `openclaw-admin` | [OpenClaw](https://github.com/anastasiiaanfimova/openclaw) config — agents, models, docker-compose, Infisical secrets, schema validation. | sonnet |
 
 ### `commands/setup.md`
 
 A `/setup` slash command for one-time project initialization. Run it once when starting work in a new project directory.
 
 What it does:
-1. Checks MemPalace is available — if not, prints the exact `.mcp.json` snippet to add
+1. Checks MemPalace is available — if not, prints the correct `.mcp.json` snippet to add. Automatically picks the right palace strategy: no `--palace` flag for sub-projects inside `~/Claude/`, separate `~/.projectname/mempalace` for top-level independent projects.
 2. Searches the palace for any existing knowledge about this project
 3. Creates `~/.claude/projects/.../memory/` files with the MemPalace protocol reminder
 4. Checks whether `code-review-graph` is initialized, prompts to run it if not
@@ -209,6 +218,7 @@ Built for QA work on an AI SaaS product — backend + web, analytics events, asy
 | Skill | What it does |
 |---|---|
 | `claude-tooling` | Cross-project Claude tooling audit. Reads MemPalace across all project wings + diary, searches the web for new Claude Code / Anthropic updates, compares against an existing `IMPROVEMENTS.md` in a GitHub repo, and pushes an updated file with status tracking (🔄 pending / ✅ done / 🆕 new / 📡 new in Claude). Fully autonomous — auto-commits and pushes. No user input needed. |
+| `push-config` | Syncs `~/.claude/` files to this GitHub repo. Diffs local vs repo, anonymizes private project names, commits only changed files. Handles CLAUDE.md, settings.json, all agents, public skills, MemPalace hooks, and palace_detect.sh. Updates README if content changed. |
 
 ## How to use
 
