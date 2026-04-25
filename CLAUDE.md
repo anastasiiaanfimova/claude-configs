@@ -55,8 +55,27 @@ infisical secrets set --projectId="$INFISICAL_PROJECT_WORK" --path="/<project>" 
 **Проекты и их расположение:**
 - `~/<project>/` — отдельно (Jira/Confluence работа)
 - `~/<project>/` — отдельно (основной продукт)
-- `~/Claude/Hermes/` — Docker agent, использует Personal/hermes/ через machine identity
+- `~/Claude/hermes/` — Docker agent, использует Personal/hermes/ через machine identity
 - `~/Claude/Openclaw/` — Docker agent, без Infisical
 - `~/Claude/<project>/` — Telegram reader tool
 
 Если пользователь просит сохранить токен или ключ — предложить добавить в нужный проект/папку Infisical, не в файл.
+
+## Superpowers — Overrides
+
+Superpowers установлен глобально (scope: user). По правилу самого плагина: **"user instructions always take precedence over superpowers skills"**.
+
+### Brainstorming HARD-GATE — исключения
+
+Скилл `superpowers:brainstorming` требует обязательного брейнсторминга перед любой сложной задачей. Это правило НЕ применяется для следующих action-oriented скиллов — они должны выполняться напрямую без brainstorming-фазы:
+
+- `tc-create`, `tc-update`, `tc-gap` — создание/обновление тест-кейсов (<project> QA)
+- `bug-dig`, `bug-candidates` — баг-анализ и сортировка (<project> QA)
+- `mac-cleanup` — системная чистка macOS
+- `push-config`, `refresh-git` — git/config операции
+
+### Skill invocation — приоритет
+
+`using-superpowers` требует инвоцировать скиллы "даже при 1% вероятности". Это не отменяет:
+1. **MemPalace Protocol** — `mempalace_status` / `mempalace_search` при старте сессии выполняются всегда, до любых скиллов
+2. **Project-specific workflows** — если в CLAUDE.md проекта описан свой процесс, он имеет приоритет над superpowers-скиллами

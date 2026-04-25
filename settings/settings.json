@@ -4,6 +4,7 @@
       "mcp__mempalace__*"
     ]
   },
+  "model": "sonnet",
   "hooks": {
     "PreToolUse": [
       {
@@ -77,7 +78,8 @@
     "command": "bash \"$HOME/.claude/statusline.sh\""
   },
   "enabledPlugins": {
-    "warp@claude-code-warp": true
+    "warp@claude-code-warp": true,
+    "superpowers@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "claude-code-warp": {
@@ -87,6 +89,5 @@
       }
     }
   },
-  "theme": "dark-ansi",
-  "model": "sonnet"
+  "theme": "dark-ansi"
 }
