@@ -138,6 +138,42 @@ done
 
 For **hook_agent.py** and **palace_detect.sh**: same pattern.
 
+### Step 2b — Remove stale skills from repo
+
+After syncing skills, check if the repo has any skill directories **not** in PUBLIC_SKILLS and delete them:
+
+```bash
+for repo_skill_dir in /tmp/claude-configs/skills/*/; do
+  name=$(basename "$repo_skill_dir")
+  if [[ "$name" != "claude-tooling" && "$name" != "push-config" ]]; then
+    git -C /tmp/claude-configs rm -r "skills/$name"
+    echo "DELETED stale skill from repo: skills/$name"
+  fi
+done
+```
+
+### Step 2c — Privacy scan
+
+Before staging anything, scan all repo files for private names that should have been anonymized:
+
+```bash
+LEAKS=$(grep -rn \
+  "<project>\|<project>\|<project>\|<project>\|<project>\|/Users/anastasiia\|anastasiia\.anfimova" \
+  /tmp/claude-configs/ \
+  --include="*.md" --include="*.json" --include="*.py" --include="*.sh" \
+  2>/dev/null | grep -v ".git" | grep -v "anastasiiaanfimova")
+
+if [ -n "$LEAKS" ]; then
+  echo "PRIVACY LEAK DETECTED — aborting push:"
+  echo "$LEAKS"
+  echo "Fix anon.py patterns and re-run."
+  exit 1
+fi
+echo "Privacy scan: clean"
+```
+
+If any leaks are found → **stop immediately**, do not commit. Report which file and line contains the leak.
+
 ### Step 3 — Check if anything changed
 
 ```bash
