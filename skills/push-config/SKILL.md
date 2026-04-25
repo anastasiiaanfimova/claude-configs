@@ -31,6 +31,7 @@ Local:  /tmp/claude-configs
 | `~/.claude/CLAUDE.md` | `CLAUDE.md` |
 | `~/.claude/settings.json` | `settings/settings.json` |
 | `~/.claude/agents/*.md` | `agents/` |
+| `~/.claude/commands/setup.md` | `commands/setup.md` |
 | `~/.mempalace/hook_agent.py` | `hooks/hook_agent.py` |
 | `~/.mempalace/palace_detect.sh` | `scripts/palace_detect.sh` |
 
@@ -115,6 +116,13 @@ cp /tmp/claude_anon.md /tmp/claude-configs/CLAUDE.md
 ```
 
 For **agents/**: loop over all `~/.claude/agents/*.md`, anonymize each, compare with repo file, copy if changed. Also check for **new files** (in local but not in repo) and **deleted files** (in repo but not in local) — add or remove accordingly.
+
+For **commands/setup.md**:
+```bash
+mkdir -p /tmp/claude-configs/commands
+python3 /tmp/anon.py < ~/.claude/commands/setup.md > /tmp/setup_anon.md
+diff /tmp/setup_anon.md /tmp/claude-configs/commands/setup.md > /dev/null 2>&1 || cp /tmp/setup_anon.md /tmp/claude-configs/commands/setup.md
+```
 
 For **skills (PUBLIC_SKILLS only)**:
 ```bash
