@@ -174,7 +174,7 @@ echo "Privacy scan: clean"
 
 If any leaks are found → **stop immediately**, do not commit. Report which file and line contains the leak.
 
-### Step 3 — Check if anything changed
+### Step 3 — Review and confirm
 
 ```bash
 git -C /tmp/claude-configs status --short
@@ -182,10 +182,14 @@ git -C /tmp/claude-configs status --short
 
 If output is empty → print "claude-configs is up to date, nothing to push." and stop (no commit, no diary).
 
-If changes exist → list them for the user:
-- `M` = modified
-- `A` = new file
-- `D` = deleted
+If changes exist → show the user what will be committed:
+- List all changed files (`M` = modified, `A` = new, `D` = deleted)
+- For each modified file show a compact diff (`git diff` for unstaged, the actual content delta)
+- If any file was deleted from repo (e.g. stale skill) — call it out explicitly
+
+**Then ask:** "Всё выглядит хорошо? Коммитить и пушить?" — and wait for confirmation before proceeding.
+
+If the user has questions or wants to adjust anything — discuss and resolve before moving to Step 4.
 
 ### Step 4 — Commit and push
 
