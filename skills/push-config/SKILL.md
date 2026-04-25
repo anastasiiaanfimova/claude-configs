@@ -155,7 +155,7 @@ done
 Before staging anything, scan all repo files for private names that should have been anonymized:
 
 ```bash
-REPL_FILE="$HOME/.claude/skills/push-config/docs/replacements.md"
+REPL_FILE="$HOME/.claude/skills/push-config/replacements.md"
 SCAN_PATTERN=$(grep "^SCAN:" "$REPL_FILE" | sed 's/^SCAN: *//')
 
 LEAKS=$(grep -rn "$SCAN_PATTERN" /tmp/claude-configs/ \

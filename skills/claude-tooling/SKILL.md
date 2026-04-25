@@ -3,8 +3,8 @@ name: claude-tooling
 description: >-
   Cross-project Claude tooling audit. Reads MemPalace (all wings) + diary,
   searches for new Claude Code / Anthropic updates via web, compares against
-  existing IMPROVEMENTS.md in the claude-configs GitHub repo, and pushes an
-  updated file with status tracking. Fully automatic — no user input needed.
+  existing local IMPROVEMENTS.md, and writes updated file with status tracking.
+  Fully automatic — no user input needed.
   Trigger: "claude-tooling", "что улучшить в Claude", "аудит клода",
   "новое в Claude Code", "обнови improvements".
 version: 0.1.0
@@ -12,40 +12,27 @@ version: 0.1.0
 
 # Claude Tooling — Cross-Project Audit
 
-Reads all available signal, compares with existing suggestions, pushes updated `IMPROVEMENTS.md` to GitHub.
+Reads all available signal, compares with existing suggestions, writes updated `IMPROVEMENTS.md` locally.
 Fully autonomous — runs without user input.
 
-## Repo
+## File
 
 ```
-Owner: anastasiiaanfimova
-Repo:  claude-configs
-File:  IMPROVEMENTS.md
-Branch: main
+Local: ~/Claude/digests/IMPROVEMENTS.md
 ```
 
 ## Workflow
 
-### Step 0 — Read existing IMPROVEMENTS.md from GitHub
+### Step 0 — Read existing IMPROVEMENTS.md
 
 ```bash
-gh api repos/anastasiiaanfimova/claude-configs/contents/IMPROVEMENTS.md 2>/dev/null \
-  | python3 -c "
-import sys, json, base64
-try:
-    d = json.load(sys.stdin)
-    print('SHA:', d['sha'])
-    print('---CONTENT---')
-    print(base64.b64decode(d['content']).decode())
-except: print('NOT_FOUND')
-"
+cat ~/Claude/digests/IMPROVEMENTS.md 2>/dev/null || echo "NOT_FOUND"
 ```
 
 If `NOT_FOUND` → file doesn't exist yet, will be created fresh.
 If found → extract:
-1. **SHA** — needed for the PUT request later
-2. **Existing items** with their status: `🔄 pending`, `✅ done`, `💡 idea`
-3. **"📡 Новое в Claude"** section — note what was already recorded to avoid duplicates
+1. **Existing items** with their status: `🔄 pending`, `✅ done`, `💡 idea`
+2. **"📡 Новое в Claude"** section — note what was already recorded to avoid duplicates
 
 ---
 
@@ -154,38 +141,11 @@ Items from previous file marked as done. Keep for history.
 
 ---
 
-### Step 5 — Push to GitHub
+### Step 5 — Write to local file
 
-Encode the new content and PUT to the repo:
+Use the Write tool to overwrite `~/Claude/digests/IMPROVEMENTS.md` with the new content.
 
-```bash
-python3 -c "
-import base64, sys
-content = sys.stdin.read()
-print(base64.b64encode(content.encode()).decode())
-" << 'CONTENT'
-<paste new IMPROVEMENTS.md content here>
-CONTENT
-```
-
-Then push:
-
-```bash
-# If file existed (has SHA from Step 0):
-gh api repos/anastasiiaanfimova/claude-configs/contents/IMPROVEMENTS.md \
-  -X PUT \
-  -f message="tooling audit $(date +%Y-%m-%d)" \
-  -f content="<base64_content>" \
-  -f sha="<sha_from_step_0>"
-
-# If file is new (no SHA):
-gh api repos/anastasiiaanfimova/claude-configs/contents/IMPROVEMENTS.md \
-  -X PUT \
-  -f message="tooling audit $(date +%Y-%m-%d) [init]" \
-  -f content="<base64_content>"
-```
-
-Confirm: response should include `"commit"` key. Print the commit URL.
+Confirm: print "Written to ~/Claude/digests/IMPROVEMENTS.md".
 
 ---
 
@@ -194,7 +154,6 @@ Confirm: response should include `"commit"` key. Print the commit URL.
 `mcp__mempalace__mempalace_diary_write` with compact AAAK summary:
 - Date range analysed
 - Count of new suggestions / updated pending / new Claude features found
-- Commit URL
 
 Topic: `claude-tooling`
 
