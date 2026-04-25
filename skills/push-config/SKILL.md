@@ -49,7 +49,7 @@ Each skill is synced as `skills/<name>/SKILL.md`.
 Replacement rules and the privacy-scan pattern live in a **local-only** file (never synced):
 
 ```
-~/.claude/skills/push-config/docs/replacements.md
+~/.claude/skills/push-config/replacements.md
 ```
 
 To add a new private project name, append a line:
@@ -82,7 +82,7 @@ Use this Python one-liner for each file. Run it as a function — apply to every
 # anon.py — reads patterns from local docs/replacements.md, applies to stdin
 import sys, re, os
 
-repl_file = os.path.expanduser('~/.claude/skills/push-config/docs/replacements.md')
+repl_file = os.path.expanduser('~/.claude/skills/push-config/replacements.md')
 replacements = []
 with open(repl_file) as f:
     for line in f:

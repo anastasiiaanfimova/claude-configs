@@ -32,6 +32,6 @@ settings.local.json
 !hooks/**
 !skills/
 !skills/**
-skills/push-config/docs/
+skills/push-config/replacements.md
 !scripts/
 !scripts/**
