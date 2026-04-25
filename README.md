@@ -117,7 +117,7 @@ Two tiers of isolation:
 
 ```
 ~/Claude/.mcp.json           → mempalace (no --palace) → ~/.mempalace/palace
-~/Claude/tg-reader/.mcp.json → mempalace (no --palace) → ~/.mempalace/palace  (inherits)
+~/Claude/<project>/.mcp.json → mempalace (no --palace) → ~/.mempalace/palace  (inherits)
 ~/Claude/hermes/.mcp.json    → mempalace (no --palace) → ~/.mempalace/palace  (inherits)
 ```
 

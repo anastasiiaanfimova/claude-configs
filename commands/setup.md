@@ -7,7 +7,10 @@ description: One-time project setup — initialize MemPalace context and project
 Run one-time setup for this project. Do all steps in order.
 
 Derive the project name from the current directory name (lowercase).
-Derive the project palace path as `/Users/anastasiia/.<project-name>/mempalace`.
+
+**Determine palace strategy** based on the current directory path:
+- If the current directory is inside `/Users/<user>/Claude/` (a sub-project of the Claude workspace) → **shared palace** (no `--palace` flag, uses `~/.mempalace/palace` via palace_detect.sh)
+- Otherwise (top-level independent project like <project>, <project>) → **separate palace** at `/Users/<user>/.<project-name>/mempalace`
 
 ---
 
@@ -18,18 +21,34 @@ Check if `.mcp.json` exists in the current project root AND contains a `mempalac
 **If `.mcp.json` is missing or has no `mempalace` entry:**
 
 1. Create or update `.mcp.json` — add the `mempalace` server (merge with existing content if file exists):
-```json
-{
-  "mcpServers": {
-    "mempalace": {
-      "command": "/Users/anastasiia/.mempalace/venv/bin/python3",
-      "args": ["-m", "mempalace.mcp_server", "--palace", "/Users/anastasiia/.<project-name>/mempalace"],
-      "type": "stdio",
-      "env": {}
-    }
-  }
-}
-```
+
+   **For shared palace (project is inside ~/Claude/):**
+   ```json
+   {
+     "mcpServers": {
+       "mempalace": {
+         "command": "/Users/<user>/.mempalace/venv/bin/python3",
+         "args": ["-m", "mempalace.mcp_server"],
+         "type": "stdio",
+         "env": {}
+       }
+     }
+   }
+   ```
+
+   **For separate palace (top-level independent project):**
+   ```json
+   {
+     "mcpServers": {
+       "mempalace": {
+         "command": "/Users/<user>/.mempalace/venv/bin/python3",
+         "args": ["-m", "mempalace.mcp_server", "--palace", "/Users/<user>/.<project-name>/mempalace"],
+         "type": "stdio",
+         "env": {}
+       }
+     }
+   }
+   ```
 
 2. Create or update `.claude/settings.local.json` — add mempalace to permissions and enabledMcpjsonServers (merge, don't overwrite):
    - Add `"mcp__mempalace__*"` to `permissions.allow` if not already there
@@ -83,7 +102,7 @@ type: feedback
 ## В конце сессии:
 - Вызвать `mempalace_diary_write` — записать что произошло, что узнала, что важно
 
-**Why:** Каждый проект имеет изолированный MemPalace palace. MemPalace — основной источник, файлы — резервный слой.
+**Why:** Проекты внутри ~/Claude/ используют общий palace (~/.mempalace/palace). Независимые проекты (<project>, <project> и т.д.) имеют свой изолированный palace. В обоих случаях MemPalace — основной источник памяти, файлы — резервный слой.
 ```
 
 **Step 3 — Set up code-review-graph**
