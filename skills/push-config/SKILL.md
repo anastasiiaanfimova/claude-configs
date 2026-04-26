@@ -190,7 +190,35 @@ If changes exist → show the user what will be committed:
 
 If the user has questions or wants to adjust anything — discuss and resolve before moving to Step 4.
 
-### Step 4 — Commit and push
+### Step 4 — Update README.md (mandatory, before commit)
+
+**Always run this step** — even if README.md itself wasn't in the diff. Any config change may make README stale.
+
+Read `/tmp/claude-configs/README.md` and verify these sections match the current local state:
+
+- **Hooks** (`settings.json` changed): hook names, count, sync/async notes — must match actual hooks in `settings.json`
+- **Agents** (`agents/` changed): agent table rows — names, descriptions, models
+- **Skills** (`skills/` changed): skill table rows — names, what they do
+- **Memory stack** (any change): tool names, descriptions — must match tools actually configured
+- **Credentials / vault** (`CLAUDE.md` changed): vault names, workflow still accurate
+
+**Link rule — real links only.** Every tool or product mentioned in README must have a working URL. When adding or editing a mention:
+1. Check if the tool already has a link in README — if yes, keep it
+2. If no link exists: find the real one (GitHub repo, docs page, npm package) before writing
+3. Never use placeholder links like `#`, `(link)`, or invented URLs
+4. Format: `[Tool Name](https://real.url)` inline in the text or table cell
+
+Known real links for this setup:
+- MemPalace → check current link in README (maintained there)
+- code-review-graph → check current link in README
+- Superpowers → check current link in README
+- episodic-memory → find via `npm info episodic-memory` or `pip show episodic-memory` or search GitHub before adding
+- Claude Code hooks docs → `https://docs.anthropic.com/en/docs/claude-code/hooks`
+- Infisical → `https://infisical.com`
+
+Edit `/tmp/claude-configs/README.md` directly for any outdated sections. The README update is part of the same commit as the config changes — not a follow-up.
+
+### Step 5 — Commit and push
 
 ```bash
 cd /tmp/claude-configs
@@ -207,18 +235,6 @@ Print the commit hash:
 ```bash
 git -C /tmp/claude-configs log --oneline -1
 ```
-
-### Step 5 — Update README.md if anything changed
-
-If **any** files were updated in this sync run, read the current local config state and verify that `/tmp/claude-configs/README.md` is consistent:
-
-- **Hooks** (`settings.json` changed): hook names, count, sync/async notes — must match actual hooks
-- **Agents** (agents/ changed): agent table rows — names, descriptions, models
-- **Skills** (skills/ changed): skill table rows — names, what they do
-- **Memory stack** (any change): descriptions of MemPalace, code-review-graph, auto-memory still accurate
-- **Credentials / vault** (CLAUDE.md changed): vault names, workflow still accurate
-
-Edit `/tmp/claude-configs/README.md` directly for any outdated sections. Stage the change — include in the same commit or push as a follow-up if settings were already committed.
 
 ### Step 6 — Write diary entry
 
