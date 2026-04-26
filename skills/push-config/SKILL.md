@@ -259,7 +259,7 @@ Topic: `claude-configs.sync`
 ## Notes
 
 - **Always anonymize before diffing** — even if the file looks clean, run it through anon.py.
-- **Pre-commit hook** in the repo blocks private words as a safety net — if it fires, check anon.py patterns.
+- **Pre-commit hook** (`hooks/pre-commit`) reads forbidden words from `~/.git-hooks/pre-commit.local` (gitignored). The hook is run explicitly in Step 5 before every commit. If it fires, check that `pre-commit.local` FORBIDDEN words match your `replacements.md` scan patterns.
 - `settings.local.json` is **never** synced — it's machine-local (paths, personal tokens).
 - Project-scoped agents (e.g. in `~/Hermes/.claude/agents/`) are never synced here — only `~/.claude/agents/`.
 - If a skill is NOT in PUBLIC_SKILLS but the user wants to add it → update this file's `PUBLIC_SKILLS` list and re-run.
