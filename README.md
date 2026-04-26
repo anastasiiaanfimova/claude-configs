@@ -231,12 +231,16 @@ Skills differ from agents: agents are subprocesses dispatched for isolated subta
 
 #### QA skills
 
-Built for QA work on an AI SaaS product — backend + web, analytics events, async generation pipelines. Three skills cover the core QA loop: write TCs, find gaps, improve the toolset.
+Built for QA work on an AI SaaS product — backend + web, analytics events, async generation pipelines.
 
 | Skill | What it does |
 |---|---|
 | `tc-create` | Creates test cases in Testiny following project naming conventions, priority rules (based on analytics event volume), and Slate.js step format. Verifies all data against a real source — analytics platform, backend code, or monitoring. Never invents steps. |
+| `tc-update` | Updates existing test cases in Testiny: bulk field changes (type, priority, status, automation), folder moves, content/steps edits, renames. Handles etag flow automatically. ACTIVE TCs require explicit confirmation before any change. |
 | `tc-gap` | Gap analysis: fetches all existing TCs from Testiny, collects signal sources per project (analytics events for web, backend handler map for backend, admin panel pages for admin), cross-references, and outputs a prioritized gap report. Auto-updates a Notion page; preserves manually added notes. |
+| `bug-candidates` | Weekly bug triage prep: refreshes signal sources (Sentry, GitLab, Amplitude, Grafana, Asana) in Notion and rebuilds the Bug Candidates list with dedup against the prior week. Output feeds into `bug-dig`. Never auto-creates Asana tasks. |
+| `bug-dig` | Investigates a Sentry issue or Asana bug: confirms whether it's a real user-impacting bug, noise, or theoretical risk. Collects evidence across Sentry, Loki, Amplitude, git log, Notion, and code. Writes verdict to Notion Bug Candidates DB; never auto-creates Asana tasks. |
+| `refresh-git` | Pulls latest from main for all project repos and rebuilds code-review-graph indexes. Run at the start of a session before code analysis or QA work. |
 | `qa-tooling` | Tooling audit: reads MemPalace diary across recent sessions (last 14 days), identifies recurring pain points and manual steps, and suggests new skills, agents, or automations to build. Focused on "what should we build next?" — not a session summary. |
 
 #### Claude skills
@@ -245,6 +249,8 @@ Built for QA work on an AI SaaS product — backend + web, analytics events, asy
 |---|---|
 | `claude-tooling` | Cross-project Claude tooling audit. Reads MemPalace across all project wings + diary, searches the web for new Claude Code / Anthropic updates, compares against an existing `IMPROVEMENTS.md` in a GitHub repo, and pushes an updated file with status tracking (🔄 pending / ✅ done / 🆕 new / 📡 new in Claude). Fully autonomous — auto-commits and pushes. No user input needed. |
 | `push-config` | Syncs `~/.claude/` files to this GitHub repo. Diffs local vs repo, anonymizes private project names, commits only changed files. Handles CLAUDE.md, settings.json, all agents, public skills, MemPalace hooks, and palace_detect.sh. Updates README if content changed. |
+| `mac-cleanup` | macOS system cleanup: scans artifacts from removed apps, stale configs, and old caches. Three-phase: survey (read-only) → confirm → clean. Fully automated for safe operations; asks before anything non-obvious. |
+| `find-skills` | Discovers and suggests installable agent skills when you ask "is there a skill for X?" or want to extend Claude's capabilities. Searches the open skills ecosystem. |
 
 ## How to use
 
