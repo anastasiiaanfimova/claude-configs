@@ -4,7 +4,7 @@ My personal Claude Code configuration — custom agents, hooks, CLAUDE.md exampl
 
 ## Plugins
 
-[Superpowers](https://github.com/NightcodingPro/claude-plugins-official/tree/main/superpowers) is installed globally (scope: user). It adds structured workflows for brainstorming, planning, TDD, debugging, code review, and git worktrees — available in every project without any per-project config.
+[Superpowers](https://github.com/obra/superpowers) is installed globally (scope: user). It adds structured workflows for brainstorming, planning, TDD, debugging, code review, and git worktrees — available in every project without any per-project config.
 
 Superpowers skills are invoked with `superpowers:<skill-name>` (e.g. `superpowers:brainstorming`, `superpowers:systematic-debugging`). See the plugin repo for the full list.
 
