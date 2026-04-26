@@ -41,9 +41,10 @@ Stop             → MemPalace stop hook (sync)
                    This is how memories actually get saved.
                  → episodic-memory sync (async)
                    Indexes the finished session so it's searchable later.
-                 → cleanup_history.sh (async)
+                 → cleanup_history.sh (async, local-only)
                    Trims hook-approvals.log to 500 lines; prunes .jsonl session
-                   logs older than 30 days.
+                   logs older than 30 days. Script lives in ~/.claude/scripts/
+                   on the local machine — not in this repo.
 
 StopFailure      → MemPalace stop hook (sync, crash path)
                    Same as Stop, but fires when the session ends due to an
@@ -207,6 +208,16 @@ What it does:
 **Requires:** `mempalace` configured in the project's `.mcp.json` (see MCP project isolation above).
 
 
+### `scripts/`
+
+Helper scripts used by the hooks and tooling.
+
+| Script | What it does |
+|--------|-------------|
+| `palace_detect.sh` | Resolves which MemPalace palace to use for the current directory. Walks up the directory tree looking for a `.mcp.json` with a `mempalace` entry; falls back to `~/.mempalace/palace`. Used in all hook commands so the right palace is always targeted. |
+
+> **Local-only scripts** not in this repo: `statusline.sh` (populates the Claude Code status bar) and `cleanup_history.sh` (trims `hook-approvals.log` to 500 lines, prunes session logs older than 30 days). Both live in `~/.claude/scripts/` on the local machine and are wired into hooks via `settings.json`.
+
 ### `skills/`
 
 Slash command skills — invokable with `/skill-name` in any Claude Code session. Each skill defines a multi-step automated workflow that Claude executes inline (with full tool access and context), on demand.
@@ -249,7 +260,9 @@ Then run `/setup` from any new project directory.
 
 Copy what's useful, adjust paths to your setup. [Claude Code hooks docs](https://docs.anthropic.com/en/docs/claude-code/hooks)
 
-**Pre-commit hook** — `hooks/pre-commit` is a global hook that blocks private project or service names from leaking into public repos. It checks staged diffs only for repos under your GitHub owner, and only if they're public. Install it once and it covers all repos on the machine:
+**Pre-commit hook** — `hooks/pre-commit` is a global hook that blocks private project or service names from leaking into public repos. It checks staged diffs only for repos under your GitHub owner, and only if they're public.
+
+Git never auto-installs hooks on clone — you need to set this up once manually:
 
 ```bash
 cp hooks/pre-commit ~/.git-hooks/pre-commit
@@ -257,4 +270,4 @@ chmod +x ~/.git-hooks/pre-commit
 git config --global core.hooksPath ~/.git-hooks
 ```
 
-Then edit `~/.git-hooks/pre-commit` and fill in `FORBIDDEN=()` with your private project names. Keep that file local — never commit it.
+Then edit `~/.git-hooks/pre-commit` and fill in `FORBIDDEN=()` with your private project names. The `FORBIDDEN` array in the committed version is intentionally empty — private names must stay local and never be committed.
