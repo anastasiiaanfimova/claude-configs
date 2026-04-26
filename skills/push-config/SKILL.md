@@ -32,7 +32,6 @@ Local:  /tmp/claude-configs
 | `~/.claude/settings.json` | `settings/settings.json` |
 | `~/.claude/agents/*.md` | `agents/` |
 | `~/.claude/skills/setup/SKILL.md` | `skills/setup/SKILL.md` |
-| `~/.mempalace/hook_agent.py` | `hooks/hook_agent.py` |
 | `~/.mempalace/palace_detect.sh` | `scripts/palace_detect.sh` |
 | `~/.claude/scripts/cleanup_history.sh` | `scripts/cleanup_history.sh` |
 
@@ -129,7 +128,7 @@ for name in claude-tooling push-config setup; do
 done
 ```
 
-For **hook_agent.py**, **palace_detect.sh**, and **cleanup_history.sh**: same pattern.
+For **palace_detect.sh** and **cleanup_history.sh**: same pattern.
 
 ### Step 2b — Remove stale skills from repo
 
@@ -204,7 +203,7 @@ For each directory below, cross-check repo contents vs README entries. Add missi
 | `agents/` | `### \`agents/\`` tables | filename without `.md` | read agent file for description + model |
 | `skills/` | `### \`skills/\`` tables | dir name | read `SKILL.md` description field |
 | `scripts/` | `### \`scripts/\`` table | filename | read file header comment for purpose |
-| `hooks/` | `### \`settings/settings.json\`` hooks block + `hooks/pre-commit` section | filename | describe what the file does |
+| `hooks/` | `### \`hooks/\`` table | filename | read file header comment for purpose |
 
 Rules:
 - **File in repo but no row in README** → add the row
@@ -267,7 +266,7 @@ Topic: `claude-configs.sync`
 ## Notes
 
 - **Always anonymize before diffing** — even if the file looks clean, run it through anon.py.
-- **Pre-commit hook** (`hooks/pre-commit`) reads forbidden words from `~/.git-hooks/pre-commit.local` (gitignored). The hook is run explicitly in Step 5 before every commit. If it fires, check that `pre-commit.local` FORBIDDEN words match your `replacements.md` scan patterns.
+- **Pre-commit hook** (`hooks/pre-commit`) reads the scan pattern from `replacements.md` (SCAN: line) automatically — no manual sync needed. Override via `~/.git-hooks/pre-commit.local` (FORBIDDEN array) if needed; gitignored. The hook is run explicitly in Step 5 before every commit.
 - `settings.local.json` is **never** synced — it's machine-local (paths, personal tokens).
 - Project-scoped agents (e.g. in `~/Hermes/.claude/agents/`) are never synced here — only `~/.claude/agents/`.
 - If a skill is NOT in PUBLIC_SKILLS but the user wants to add it → update this file's `PUBLIC_SKILLS` list and re-run.

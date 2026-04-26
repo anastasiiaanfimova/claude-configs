@@ -6,17 +6,28 @@
 #   chmod +x ~/.git-hooks/pre-commit
 #   git config --global core.hooksPath ~/.git-hooks
 #
-# Then create ~/.git-hooks/pre-commit.local with your private names:
+# Pattern source (in priority order):
+#   1. ~/.git-hooks/pre-commit.local — FORBIDDEN=(word1 word2) bash array (override)
+#   2. ~/.claude/skills/push-config/replacements.md — SCAN: line (default)
 #
-#   FORBIDDEN=(myproject internal-tool)
-#
-# The .local file is never committed — add it to your global gitignore if needed.
-# This script reads FORBIDDEN from .local if it exists; falls back to empty list.
+# The .local file is never committed and is only needed if you don't use push-config.
 
-# --- Load local forbidden words ---
-FORBIDDEN=()
+# --- Load scan pattern ---
+REPL_FILE="$HOME/.claude/skills/push-config/replacements.md"
 LOCAL_FILE="$(dirname "$0")/pre-commit.local"
-[ -f "$LOCAL_FILE" ] && source "$LOCAL_FILE"
+
+PATTERN=""
+if [ -f "$LOCAL_FILE" ]; then
+  FORBIDDEN=()
+  source "$LOCAL_FILE"
+  [ ${#FORBIDDEN[@]} -gt 0 ] && PATTERN=$(IFS='|'; echo "${FORBIDDEN[*]}")
+fi
+
+if [ -z "$PATTERN" ] && [ -f "$REPL_FILE" ]; then
+  PATTERN=$(grep "^SCAN:" "$REPL_FILE" | sed 's/^SCAN: *//' | sed 's/\\|/|/g')
+fi
+
+[ -z "$PATTERN" ] && exit 0
 
 # --- Config ---
 OWNER="anastasiiaanfimova"   # only scan repos under this GitHub owner
@@ -36,21 +47,11 @@ if command -v gh &>/dev/null; then
   fi
 fi
 
-# Skip if no forbidden words defined
-[ ${#FORBIDDEN[@]} -eq 0 ] && exit 0
-
-# --- Scan staged diff for forbidden words ---
-FOUND=0
-for word in "${FORBIDDEN[@]}"; do
-  matches=$(git diff --cached --unified=0 | grep "^+" | grep -iv "^+++" | grep -i "$word")
-  if [ -n "$matches" ]; then
-    echo "❌ pre-commit: private name '$word' found in staged diff (public repo: $REMOTE_URL):"
-    echo "$matches"
-    FOUND=1
-  fi
-done
-
-if [ "$FOUND" -eq 1 ]; then
+# --- Scan staged diff ---
+matches=$(git diff --cached --unified=0 | grep "^+" | grep -iv "^+++" | grep -iE "$PATTERN")
+if [ -n "$matches" ]; then
+  echo "❌ pre-commit: private name found in staged diff (public repo: $REMOTE_URL):"
+  echo "$matches"
   echo ""
   echo "Replace with a generic placeholder (e.g. <project>) before committing."
   exit 1

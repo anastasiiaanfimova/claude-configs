@@ -48,9 +48,7 @@ Stop             → MemPalace stop hook (sync)
 
 StopFailure      → MemPalace stop hook (sync, crash path)
                    Same as Stop, but fires when the session ends due to an
-                   API error (rate limit, auth failure, etc.). Prepends a crash
-                   notice to the diary prompt so Claude records what happened
-                   before the session dies.
+                   API error (rate limit, auth failure, etc.).
 
 PreCompact       → MemPalace precompact hook
                    Before Claude Code compresses the context window, important
@@ -204,6 +202,14 @@ Helper scripts used by the hooks and tooling.
 
 > **Local-only:** [`statusline.sh`](https://github.com/anastasiiaanfimova/claude-statusline) — populates the Claude Code status bar. Lives in `~/.claude/scripts/` and is wired via `statusLine` in `settings.json`. See the linked repo for setup.
 
+### `hooks/`
+
+Two files that extend the hook infrastructure.
+
+| File | What it does |
+|------|-------------|
+| `pre-commit` | Global git pre-commit hook — blocks private project names from leaking into public repos. Reads the scan pattern from `~/.claude/skills/push-config/replacements.md` (SCAN: line). Runs only for public repos under `anastasiiaanfimova`. |
+
 ### `skills/`
 
 Slash command skills — invokable with `/skill-name` in any Claude Code session. Each skill defines a multi-step automated workflow that Claude executes inline (with full tool access and context), on demand.
@@ -264,10 +270,10 @@ chmod +x ~/.git-hooks/pre-commit
 git config --global core.hooksPath ~/.git-hooks
 ```
 
-Then create `~/.git-hooks/pre-commit.local` with your actual forbidden words:
+The hook reads its scan pattern from `~/.claude/skills/push-config/replacements.md` (the `SCAN:` line) automatically — no separate config file needed. If you use this hook without push-config, create `~/.git-hooks/pre-commit.local` with a `FORBIDDEN` array instead:
 
 ```bash
 FORBIDDEN=(myproject internal-service vault-name)
 ```
 
-The hook reads `FORBIDDEN` from `.local` if it exists; falls back to an empty list if the file is absent. The `.local` file is gitignored — keep it on the local machine only, never commit it. The `/push-config` skill also runs this hook explicitly before each commit.
+The `.local` file takes priority over `replacements.md` and is gitignored. The `/push-config` skill also runs this hook explicitly before each commit.

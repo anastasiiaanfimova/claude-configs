@@ -34,7 +34,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "MEMPALACE_AGENT=claude MEMPALACE_PALACE_PATH=$(bash ~/.mempalace/palace_detect.sh) cat | ~/.mempalace/venv/bin/python3 ~/.mempalace/hook_agent.py stop"
+            "command": "MEMPALACE_PALACE_PATH=$(bash ~/.mempalace/palace_detect.sh) cat | ~/.mempalace/venv/bin/python3 -m mempalace hook run --hook stop --harness claude-code"
           },
           {
             "type": "command",
@@ -55,7 +55,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "MEMPALACE_AGENT=claude MEMPALACE_PALACE_PATH=$(bash ~/.mempalace/palace_detect.sh) cat | ~/.mempalace/venv/bin/python3 ~/.mempalace/hook_agent.py stopfailure"
+            "command": "MEMPALACE_PALACE_PATH=$(bash ~/.mempalace/palace_detect.sh) cat | ~/.mempalace/venv/bin/python3 -m mempalace hook run --hook stop --harness claude-code"
           }
         ]
       }
@@ -66,7 +66,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "MEMPALACE_AGENT=claude MEMPALACE_PALACE_PATH=$(bash ~/.mempalace/palace_detect.sh) cat | ~/.mempalace/venv/bin/python3 ~/.mempalace/hook_agent.py precompact"
+            "command": "MEMPALACE_PALACE_PATH=$(bash ~/.mempalace/palace_detect.sh) cat | ~/.mempalace/venv/bin/python3 -m mempalace hook run --hook precompact --harness claude-code"
           }
         ]
       }
