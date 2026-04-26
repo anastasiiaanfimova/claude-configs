@@ -43,6 +43,7 @@ PUBLIC_SKILLS = [
   cleanup-claude
   cleanup-mac
   find-skills
+  update-tooling
 ]
 ```
 Each skill is synced as `skills/<name>/SKILL.md`.
@@ -119,11 +120,12 @@ cp /tmp/claude_anon.md /tmp/claude-configs/CLAUDE.md
 For **agents/**: loop over all `~/.claude/agents/*.md`, anonymize each, compare with repo file, copy if changed. Also check for **new files** (in local but not in repo) and **deleted files** (in repo but not in local) — add or remove accordingly.
 
 For **skills** — iterate over each name in **PUBLIC_SKILLS** (from Config above).
-Use a heredoc — `for name in $VAR` doesn't word-split in zsh:
+Define the list once as a variable, reuse in Step 2b:
 
 ```bash
-while IFS= read -r name; do
-  [ -z "$name" ] && continue
+PUBLIC_SKILLS=(claude-tooling push-claude-config setup-project cleanup-history cleanup-claude cleanup-mac find-skills update-tooling)
+
+for name in "${PUBLIC_SKILLS[@]}"; do
   src="/Users/<user>/.claude/skills/$name/SKILL.md"
   dest="/tmp/claude-configs/skills/$name/SKILL.md"
   [ -f "$src" ] || { echo "WARNING: $src not found, skipping"; continue; }
@@ -136,29 +138,22 @@ while IFS= read -r name; do
     cp /tmp/skill_anon.md "$dest"
     echo "CHANGED: $name"
   fi
-done << 'SKILLS'
-claude-tooling
-push-claude-config
-setup-project
-cleanup-history
-cleanup-claude
-cleanup-mac
-find-skills
-SKILLS
+done
 ```
 
 ### Step 2b — Remove stale skills from repo
 
-Delete any skill dir in `/tmp/claude-configs/skills/` whose name is **not** in PUBLIC_SKILLS:
+Delete any skill dir in `/tmp/claude-configs/skills/` whose name is **not** in PUBLIC_SKILLS (use the variable set in Step 2):
 
 ```bash
 for dir in /tmp/claude-configs/skills/*/; do
   skill_name=$(basename "$dir")
-  case "$skill_name" in
-    claude-tooling|push-claude-config|setup-project|cleanup-history|cleanup-claude|cleanup-mac|find-skills) ;;
-    *) git -C /tmp/claude-configs rm -r "skills/$skill_name"
-       echo "DELETED stale skill from repo: $skill_name" ;;
-  esac
+  found=0
+  for s in "${PUBLIC_SKILLS[@]}"; do [ "$s" = "$skill_name" ] && found=1 && break; done
+  if [ $found -eq 0 ]; then
+    git -C /tmp/claude-configs rm -r "skills/$skill_name"
+    echo "DELETED stale skill from repo: $skill_name"
+  fi
 done
 ```
 
