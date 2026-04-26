@@ -163,21 +163,7 @@ Agents for managing the local Claude Code environment. Built-in agents from Clau
 | `release-manager` | npm publish, GitHub releases, changelog, git tags. Configured for the npm publish workflow on macOS. | sonnet |
 | `mempalace-admin` | MemPalace maintenance — auditing palace contents, cleanup, KG health. | sonnet |
 
-#### QA toolkit
-
-Built for a QA role at an AI project — backend + web, LLM wrapper for photo/video generation, async job pipelines. Three agents are fully custom; the rest are standard Claude Code built-in agents stored here for version control.
-
-| Agent | What it does | Model | Origin |
-|-------|-------------|-------|--------|
-| `qa-researcher` | Digest of new QA tools and testing practices — LLM eval, API testing, async pipelines, load testing. | haiku | custom |
-| `test-architect` | Test strategy from scratch — framework selection, folder structure, phased plan. Specialized for async AI/LLM pipelines and SaaS billing flows. | sonnet | custom |
-| `api-tester` | Automated REST/gRPC tests — happy path, edge cases, auth flows, DB state verification. | sonnet | built-in |
-| `e2e-tester` | Playwright E2E tests — critical user flows, form interactions, auth. | sonnet | built-in |
-| `test-case-writer` | Test cases as checklists with inline `//` comments — checks *what* to verify and *why*, not how to navigate the UI. Includes ready-made scenario blocks for async AI generation (submit→poll→result, timeouts, provider errors) and SaaS billing limits. | haiku | custom |
-| `coverage-analyst` | Finds gaps in test coverage, prioritizes what to cover next. | haiku | built-in |
-| `security-auditor` | API and web app security audit — auth bypasses, injection, broken access control. | sonnet | built-in |
-| `perf-tester` | k6 load tests for async AI pipelines — concurrent job submissions, queue saturation, polling storms, SLA validation. | sonnet | custom |
-| `bug-reporter` | Raw notes → structured bug report for Jira/Linear/GitHub Issues. Severity guide tuned for SaaS: always captures user plan, job state, quota. | haiku | custom |
+> **QA agents** (test-architect, e2e-tester, bug-reporter, etc.) are published separately — see [qa-playbook](https://github.com/anastasiiaanfimova/qa-playbook).
 
 #### Side projects
 
