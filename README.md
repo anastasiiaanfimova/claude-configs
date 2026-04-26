@@ -137,7 +137,7 @@ Two tiers of isolation:
 ~/MyProject/.mcp.json  → mempalace --palace ~/.myproject/mempalace
 ```
 
-The server is always named `mempalace` in each project, so hooks and tool permissions (`mcp__mempalace__*`) are identical everywhere. The `/setup` command automatically picks the right tier based on whether the current directory is inside `~/Claude/`.
+The server is always named `mempalace` in each project, so hooks and tool permissions (`mcp__mempalace__*`) are identical everywhere. The `/setup-project` command automatically picks the right tier based on whether the current directory is inside `~/Claude/`.
 
 If Claude is launched from any other directory, MemPalace is simply unavailable — by design.
 
@@ -205,32 +205,14 @@ Skills differ from agents: agents are subprocesses dispatched for isolated subta
 
 **Install:** copy any skill directory to `~/.claude/skills/` — Claude Code auto-discovers them on startup.
 
-> **Note:** Skills reference project-specific config (TMS project IDs, analytics project IDs, Notion page IDs). Replace `<YOUR_*>` placeholders in each skill's `SKILL.md` and reference files before use.
-
-#### QA skills
-
-Built for QA work on an AI SaaS product — backend + web, analytics events, async generation pipelines.
-
-| Skill | What it does |
-|---|---|
-| `tc-create` | Creates test cases in Testiny following project naming conventions, priority rules (based on analytics event volume), and Slate.js step format. Verifies all data against a real source — analytics platform, backend code, or monitoring. Never invents steps. |
-| `tc-update` | Updates existing test cases in Testiny: bulk field changes (type, priority, status, automation), folder moves, content/steps edits, renames. Handles etag flow automatically. ACTIVE TCs require explicit confirmation before any change. |
-| `tc-gap` | Gap analysis: fetches all existing TCs from Testiny, collects signal sources per project (analytics events for web, backend handler map for backend, admin panel pages for admin), cross-references, and outputs a prioritized gap report. Auto-updates a Notion page; preserves manually added notes. |
-| `bug-candidates` | Weekly bug triage prep: refreshes signal sources (Sentry, GitLab, Amplitude, Grafana, Asana) in Notion and rebuilds the Bug Candidates list with dedup against the prior week. Output feeds into `bug-dig`. Never auto-creates Asana tasks. |
-| `bug-dig` | Investigates a Sentry issue or Asana bug: confirms whether it's a real user-impacting bug, noise, or theoretical risk. Collects evidence across Sentry, Loki, Amplitude, git log, Notion, and code. Writes verdict to Notion Bug Candidates DB; never auto-creates Asana tasks. |
-| `refresh-git` | Pulls latest from main for all project repos and rebuilds code-review-graph indexes. Run at the start of a session before code analysis or QA work. |
-| `qa-tooling` | Tooling audit: reads MemPalace diary across recent sessions (last 14 days), identifies recurring pain points and manual steps, and suggests new skills, agents, or automations to build. Focused on "what should we build next?" — not a session summary. |
-
-#### Claude skills
+#### Skills
 
 | Skill | What it does |
 |---|---|
 | `cleanup-history` | Manual Claude Code history cleanup. Shows what will be deleted (log size, old session files), asks for confirmation, then runs. Use instead of the automatic Stop hook — run when you actually want to prune. |
-| `setup` | One-time project initialization. Configures `.mcp.json` and `.claude/settings.local.json` for MemPalace + episodic-memory, creates project memory files, checks code-review-graph, adds the project to the KG, and writes a diary entry. Automatically picks the right palace strategy: shared palace for sub-projects inside `~/Claude/`, isolated palace for top-level projects. |
+| `setup-project` | One-time project initialization. Configures `.mcp.json` and `.claude/settings.local.json` for MemPalace + episodic-memory, creates project memory files, checks code-review-graph, adds the project to the KG, and writes a diary entry. Automatically picks the right palace strategy: shared palace for sub-projects inside `~/Claude/`, isolated palace for top-level projects. |
 | `claude-tooling` | Cross-project Claude tooling audit. Reads MemPalace across all project wings + diary, searches the web for new Claude Code / Anthropic updates, compares against an existing `IMPROVEMENTS.md` in a GitHub repo, and pushes an updated file with status tracking (🔄 pending / ✅ done / 🆕 new / 📡 new in Claude). Fully autonomous — auto-commits and pushes. No user input needed. |
-| `push-config` | Syncs `~/.claude/` files to this GitHub repo. Diffs local vs repo, anonymizes private project names, commits only changed files. Handles CLAUDE.md, settings.json, all agents, public skills, MemPalace hooks, and palace_detect.sh. Updates README if content changed. |
-| `mac-cleanup` | macOS system cleanup: scans artifacts from removed apps, stale configs, and old caches. Three-phase: survey (read-only) → confirm → clean. Fully automated for safe operations; asks before anything non-obvious. |
-| `find-skills` | Discovers and suggests installable agent skills when you ask "is there a skill for X?" or want to extend Claude's capabilities. Searches the open skills ecosystem. |
+| `push-config` | Syncs `~/.claude/` files to this GitHub repo. Diffs local vs repo, anonymizes private project names, commits only changed files. Handles CLAUDE.md, settings.json, all agents, and public skills. Updates README if content changed. |
 
 ## How to use
 
@@ -239,12 +221,12 @@ Built for QA work on an AI SaaS product — backend + web, analytics events, asy
 cp agents/bug-reporter.md ~/.claude/agents/
 ```
 
-**`/setup` skill** — copy to `~/.claude/skills/setup/`:
+**`/setup-project` skill** — copy to `~/.claude/skills/setup-project/`:
 ```bash
-mkdir -p ~/.claude/skills/setup
-cp skills/setup/SKILL.md ~/.claude/skills/setup/
+mkdir -p ~/.claude/skills/setup-project
+cp skills/setup-project/SKILL.md ~/.claude/skills/setup-project/
 ```
-Then run `/setup` from any new project directory.
+Then run `/setup-project` from any new project directory.
 
 Copy what's useful, adjust paths to your setup. [Claude Code hooks docs](https://docs.anthropic.com/en/docs/claude-code/hooks)
 
