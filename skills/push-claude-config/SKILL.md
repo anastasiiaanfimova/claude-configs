@@ -272,12 +272,10 @@ git -C /tmp/claude-configs log --oneline -1
 ### Step 6 — Write diary entry
 
 `mcp__mempalace__mempalace_diary_write` with compact AAAK entry:
-- Which files changed
-- Commit hash
-- Any anonymizations applied (e.g. "replaced <project>×3")
-- Whether README was updated
-
-Topic: `claude-configs.sync`
+- `agent_name`: `"claude"`
+- `wing`: `"wing_claude"`
+- `topic`: `"claude-configs.sync"`
+- `entry`: include — which files changed, commit hash, anonymizations applied (e.g. "replaced <project>×3"), whether README was updated
 
 ---
 
