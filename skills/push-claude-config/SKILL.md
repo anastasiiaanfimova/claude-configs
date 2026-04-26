@@ -40,6 +40,9 @@ PUBLIC_SKILLS = [
   push-claude-config
   setup-project
   cleanup-history
+  cleanup-claude
+  cleanup-mac
+  find-skills
 ]
 ```
 Each skill is synced as `skills/<name>/SKILL.md`.
