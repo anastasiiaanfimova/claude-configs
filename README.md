@@ -29,7 +29,7 @@ Since MemPalace captures everything important across sessions, raw `.jsonl` sess
 
 ### `settings/settings.json`
 
-Four hooks that wire the memory stack into Claude Code:
+Five hooks that wire the memory stack and safety layer into Claude Code:
 
 ```
 UserPromptSubmit → MemPalace session-start
@@ -53,6 +53,12 @@ PreCompact       → MemPalace precompact hook
 SessionStart     → code-review-graph check
                    Warns if the codebase graph hasn't been initialized yet.
                    Reminds you to run `code-review-graph build` in new projects.
+
+PreToolUse       → dippy (Bash commands)
+                   AST-based approval filter for shell commands. Auto-approves
+                   safe read-only and standard dev commands; blocks destructive
+                   ones; prompts for anything in between. Configured via
+                   ~/.dippy/config. Install: brew tap ldayton/dippy && brew install dippy
 ```
 
 > **Requirements:** MemPalace installed at `~/.mempalace/`, code-review-graph MCP connected. If you don't use these tools, the hook structure is still a useful reference — swap in your own commands.
@@ -179,7 +185,7 @@ Two files that extend the hook infrastructure.
 
 | File | What it does |
 |------|-------------|
-| `pre-commit` | Global git pre-commit hook — blocks private project names from leaking into public repos. Reads the scan pattern from `~/.claude/skills/push-config/replacements.md` (SCAN: line). Runs only for public repos under `anastasiiaanfimova`. |
+| `pre-commit` | Global git pre-commit hook — blocks private project names from leaking into public repos. Reads the scan pattern from `~/.claude/skills/push-claude-config/replacements.md` (SCAN: line). Runs only for public repos under `anastasiiaanfimova`. |
 
 > **Local-only scripts** (not in this repo): [`statusline.sh`](https://github.com/anastasiiaanfimova/claude-statusline) — populates the status bar; `cleanup_history.sh` — manual history cleanup (invoked via `/cleanup-history` skill); `palace_detect.sh` — lives in `~/.mempalace/`, part of the MemPalace installation.
 
@@ -198,7 +204,7 @@ Skills differ from agents: agents are subprocesses dispatched for isolated subta
 | `cleanup-history` | Manual Claude Code history cleanup. Shows what will be deleted (log size, old session files), asks for confirmation, then runs. Use instead of the automatic Stop hook — run when you actually want to prune. |
 | `setup-project` | One-time project initialization. Configures `.mcp.json` and `.claude/settings.local.json` for MemPalace + episodic-memory, creates project memory files, checks code-review-graph, adds the project to the KG, and writes a diary entry. Automatically picks the right palace strategy: shared palace for sub-projects inside `~/Claude/`, isolated palace for top-level projects. |
 | `claude-tooling` | Cross-project Claude tooling audit. Reads MemPalace across all project wings + diary, searches the web for new Claude Code / Anthropic updates, compares against an existing `IMPROVEMENTS.md` in a GitHub repo, and pushes an updated file with status tracking (🔄 pending / ✅ done / 🆕 new / 📡 new in Claude). Fully autonomous — auto-commits and pushes. No user input needed. |
-| `push-config` | Syncs `~/.claude/` files to this GitHub repo. Diffs local vs repo, anonymizes private project names, commits only changed files. Handles CLAUDE.md, settings.json, all agents, and public skills. Updates README if content changed. |
+| `push-claude-config` | Syncs `~/.claude/` files to this GitHub repo. Diffs local vs repo, anonymizes private project names, commits only changed files. Handles CLAUDE.md, settings.json, all agents, and public skills. Updates README if content changed. |
 
 > **QA skills and agents** (tc-create, tc-gap, bug-dig, etc.) are published separately — see [qa-playbook](https://github.com/anastasiiaanfimova/qa-playbook).
 
@@ -228,10 +234,10 @@ chmod +x ~/.git-hooks/pre-commit
 git config --global core.hooksPath ~/.git-hooks
 ```
 
-The hook reads its scan pattern from `~/.claude/skills/push-config/replacements.md` (the `SCAN:` line) automatically — no separate config file needed. If you use this hook without push-config, create `~/.git-hooks/pre-commit.local` with a `FORBIDDEN` array instead:
+The hook reads its scan pattern from `~/.claude/skills/push-claude-config/replacements.md` (the `SCAN:` line) automatically — no separate config file needed. If you use this hook without push-config, create `~/.git-hooks/pre-commit.local` with a `FORBIDDEN` array instead:
 
 ```bash
 FORBIDDEN=(myproject internal-service vault-name)
 ```
 
-The `.local` file takes priority over `replacements.md` and is gitignored. The `/push-config` skill also runs this hook explicitly before each commit.
+The `.local` file takes priority over `replacements.md` and is gitignored. The `/push-claude-config` skill also runs this hook explicitly before each commit.

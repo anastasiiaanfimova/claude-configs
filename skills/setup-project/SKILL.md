@@ -1,5 +1,5 @@
 ---
-name: setup
+name: setup-project
 description: >-
   One-time project setup — initialize MemPalace context, episodic-memory,
   code-review-graph, and project memory files. Run once per new project directory.
