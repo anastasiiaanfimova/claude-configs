@@ -31,7 +31,7 @@ Local:  /tmp/claude-configs
 | `~/.claude/CLAUDE.md` | `CLAUDE.md` |
 | `~/.claude/settings.json` | `settings/settings.json` |
 | `~/.claude/agents/*.md` | `agents/` |
-| `~/.claude/commands/setup.md` | `commands/setup.md` |
+| `~/.claude/skills/setup/SKILL.md` | `skills/setup/SKILL.md` |
 | `~/.mempalace/hook_agent.py` | `hooks/hook_agent.py` |
 | `~/.mempalace/palace_detect.sh` | `scripts/palace_detect.sh` |
 | `~/.claude/scripts/cleanup_history.sh` | `scripts/cleanup_history.sh` |
@@ -41,6 +41,7 @@ Local:  /tmp/claude-configs
 PUBLIC_SKILLS = [
   claude-tooling
   push-config
+  setup
 ]
 ```
 Each skill is synced as `skills/<name>/SKILL.md`.
@@ -116,16 +117,9 @@ cp /tmp/claude_anon.md /tmp/claude-configs/CLAUDE.md
 
 For **agents/**: loop over all `~/.claude/agents/*.md`, anonymize each, compare with repo file, copy if changed. Also check for **new files** (in local but not in repo) and **deleted files** (in repo but not in local) — add or remove accordingly.
 
-For **commands/setup.md**:
-```bash
-mkdir -p /tmp/claude-configs/commands
-python3 /tmp/anon.py < ~/.claude/commands/setup.md > /tmp/setup_anon.md
-diff /tmp/setup_anon.md /tmp/claude-configs/commands/setup.md > /dev/null 2>&1 || cp /tmp/setup_anon.md /tmp/claude-configs/commands/setup.md
-```
-
 For **skills (PUBLIC_SKILLS only)**:
 ```bash
-for name in claude-tooling push-config; do
+for name in claude-tooling push-config setup; do
   src="$HOME/.claude/skills/$name/SKILL.md"
   dest="/tmp/claude-configs/skills/$name/SKILL.md"
   [ -f "$src" ] || continue
@@ -144,7 +138,7 @@ After syncing skills, check if the repo has any skill directories **not** in PUB
 ```bash
 for repo_skill_dir in /tmp/claude-configs/skills/*/; do
   name=$(basename "$repo_skill_dir")
-  if [[ "$name" != "claude-tooling" && "$name" != "push-config" ]]; then
+  if [[ "$name" != "claude-tooling" && "$name" != "push-config" && "$name" != "setup" ]]; then
     git -C /tmp/claude-configs rm -r "skills/$name"
     echo "DELETED stale skill from repo: skills/$name"
   fi
@@ -211,7 +205,6 @@ For each directory below, cross-check repo contents vs README entries. Add missi
 | `skills/` | `### \`skills/\`` tables | dir name | read `SKILL.md` description field |
 | `scripts/` | `### \`scripts/\`` table | filename | read file header comment for purpose |
 | `hooks/` | `### \`settings/settings.json\`` hooks block + `hooks/pre-commit` section | filename | describe what the file does |
-| `commands/` | `### \`commands/setup.md\`` section | command name | read file for what it does |
 
 Rules:
 - **File in repo but no row in README** → add the row

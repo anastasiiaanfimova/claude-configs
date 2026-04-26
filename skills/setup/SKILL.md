@@ -1,5 +1,11 @@
 ---
-description: One-time project setup — initialize MemPalace context and project memory
+name: setup
+description: >-
+  One-time project setup — initialize MemPalace context, episodic-memory,
+  code-review-graph, and project memory files. Run once per new project directory.
+  Trigger: "/setup", "setup project", "инициализируй проект", "настрой проект",
+  "первый запуск", "init project memory".
+version: 0.2.0
 ---
 
 ## Your task
@@ -118,7 +124,7 @@ type: feedback
 ## В конце сессии:
 - Вызвать `mempalace_diary_write` — записать что произошло, что узнала, что важно
 
-**Why:** Проекты внутри ~/Claude/ используют общий palace (~/.mempalace/palace). Независимые проекты (<project>, <project> и т.д.) имеют свой изолированный palace. В обоих случаях MemPalace — основной источник памяти, файлы — резервный слой.
+**Why:** Проекты внутри ~/Claude/ используют общий palace (~/.mempalace/palace). Независимые проекты имеют свой изолированный palace. В обоих случаях MemPalace — основной источник памяти, файлы — резервный слой.
 ```
 
 **Step 3 — Set up code-review-graph**
@@ -131,7 +137,7 @@ Check if `.code-review-graph/` directory exists in the current project root.
   > ```
   > code-review-graph install --platform claude-code && code-review-graph build
   > ```
-  > После установки граф будет автоматически обновляться при изменениях файлов.
+  > После установки граф будет автоматически обновляться при изменениями файлов.
 
 Don't run the command yourself — the user needs to run it manually in the project terminal.
 

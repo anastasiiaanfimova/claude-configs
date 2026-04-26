@@ -193,21 +193,6 @@ Agents for separate self-hosted projects. These are **project-scoped** — not i
 |-------|-------------|-------|
 | `hermes-admin` | [Hermes](https://github.com/anastasiiaanfimova/hermes-docker) config — Docker setup, channels, Infisical secrets, entrypoint debugging. | sonnet |
 
-### `commands/setup.md`
-
-A `/setup` slash command for one-time project initialization. Run it once when starting work in a new project directory.
-
-What it does:
-1. Checks MemPalace is available — if not, prints the correct `.mcp.json` snippet to add. Automatically picks the right palace strategy: no `--palace` flag for sub-projects inside `~/Claude/`, separate `~/.projectname/mempalace` for top-level independent projects.
-2. Searches the palace for any existing knowledge about this project
-3. Creates `~/.claude/projects/.../memory/` files with the MemPalace protocol reminder
-4. Checks whether `code-review-graph` is initialized, prompts to run it if not
-5. Adds the project to the MemPalace knowledge graph (setup date + project facts you describe)
-6. Writes a diary entry so the setup is recorded in palace history
-
-**Requires:** `mempalace` configured in the project's `.mcp.json` (see MCP project isolation above).
-
-
 ### `scripts/`
 
 Helper scripts used by the hooks and tooling.
@@ -247,6 +232,7 @@ Built for QA work on an AI SaaS product — backend + web, analytics events, asy
 
 | Skill | What it does |
 |---|---|
+| `setup` | One-time project initialization. Configures `.mcp.json` and `.claude/settings.local.json` for MemPalace + episodic-memory, creates project memory files, checks code-review-graph, adds the project to the KG, and writes a diary entry. Automatically picks the right palace strategy: shared palace for sub-projects inside `~/Claude/`, isolated palace for top-level projects. |
 | `claude-tooling` | Cross-project Claude tooling audit. Reads MemPalace across all project wings + diary, searches the web for new Claude Code / Anthropic updates, compares against an existing `IMPROVEMENTS.md` in a GitHub repo, and pushes an updated file with status tracking (🔄 pending / ✅ done / 🆕 new / 📡 new in Claude). Fully autonomous — auto-commits and pushes. No user input needed. |
 | `push-config` | Syncs `~/.claude/` files to this GitHub repo. Diffs local vs repo, anonymizes private project names, commits only changed files. Handles CLAUDE.md, settings.json, all agents, public skills, MemPalace hooks, and palace_detect.sh. Updates README if content changed. |
 | `mac-cleanup` | macOS system cleanup: scans artifacts from removed apps, stale configs, and old caches. Three-phase: survey (read-only) → confirm → clean. Fully automated for safe operations; asks before anything non-obvious. |
@@ -259,9 +245,10 @@ Built for QA work on an AI SaaS product — backend + web, analytics events, asy
 cp agents/bug-reporter.md ~/.claude/agents/
 ```
 
-**`/setup` command** — copy to `~/.claude/commands/`:
+**`/setup` skill** — copy to `~/.claude/skills/setup/`:
 ```bash
-cp commands/setup.md ~/.claude/commands/
+mkdir -p ~/.claude/skills/setup
+cp skills/setup/SKILL.md ~/.claude/skills/setup/
 ```
 Then run `/setup` from any new project directory.
 
