@@ -198,10 +198,21 @@ If the user has questions or wants to adjust anything — discuss and resolve be
 Read `/tmp/claude-configs/README.md` and verify these sections match the current local state:
 
 - **Hooks** (`settings.json` changed): hook names, count, sync/async notes — must match actual hooks in `settings.json`
-- **Agents** (`agents/` changed): agent table rows — names, descriptions, models
-- **Skills** (`skills/` changed): skill table rows — names, what they do
 - **Memory stack** (any change): tool names, descriptions — must match tools actually configured
 - **Credentials / vault** (`CLAUDE.md` changed): vault names, workflow still accurate
+
+**Agents completeness check** (always run, not just when `agents/` changed):
+1. List all files in `/tmp/claude-configs/agents/`
+2. List all agent names mentioned in the README agents tables (grep for backtick-quoted names in table rows under the `### agents/` section)
+3. For every agent file in the repo → must have a row in README. If missing → add it (read the agent file for description and model)
+4. For every agent row in README → must have a file in the repo. If file is gone → remove the row
+5. Do the same cross-check for `scripts/` — every file in `scripts/` must be described
+
+**Skills completeness check** (always run):
+1. List all skill dirs in `/tmp/claude-configs/skills/`
+2. List all skill names in README skills tables
+3. For every skill dir in repo → must have a row in README. If missing → add it (read `SKILL.md` description)
+4. For every skill row in README → must have a dir in the repo. If dir is gone → remove the row
 
 **Link rule — real links only.** Every tool or product mentioned in README must have a working URL. When adding or editing a mention:
 1. Check if the tool already has a link in README — if yes, keep it
