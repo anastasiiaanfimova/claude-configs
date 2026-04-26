@@ -54,7 +54,7 @@ SessionStart     → code-review-graph check
                    Warns if the codebase graph hasn't been initialized yet.
                    Reminds you to run `code-review-graph build` in new projects.
 
-PreToolUse       → dippy (Bash commands)
+PreToolUse       → [dippy](https://github.com/ldayton/Dippy) (Bash commands)
                    AST-based approval filter for shell commands. Auto-approves
                    safe read-only and standard dev commands; blocks destructive
                    ones; prompts for anything in between. Configured via
