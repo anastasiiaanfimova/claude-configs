@@ -27,6 +27,26 @@ Worth checking periodically for new patterns and updates.
 - [trailofbits/skills](https://github.com/trailofbits/skills) — 15+ security skills: CodeQL, Semgrep, variant analysis, fix verification; good reference for security-auditor agent
 - [undeadlist/claude-code-agents](https://github.com/undeadlist/claude-code-agents) — solo dev workflow with multi-auditor patterns, micro-checkpoints, parallel agents
 
+### obra's Claude Code ecosystem
+
+Автор superpowers. Стоит следить за всем репозиторием: [github.com/obra?tab=repositories](https://github.com/obra?tab=repositories)
+
+**Superpowers ecosystem:**
+- [obra/superpowers-marketplace](https://github.com/obra/superpowers-marketplace) — каталог плагинов для superpowers (882 ⭐); отправная точка для поиска новых скиллов и плагинов
+- [obra/superpowers-skills](https://github.com/obra/superpowers-skills) — community-editable скиллы; можно контрибьютить свои (627 ⭐)
+- [obra/superpowers-lab](https://github.com/obra/superpowers-lab) — экспериментальные скиллы: новые техники до их переноса в основной плагин (303 ⭐)
+- [obra/superpowers-developing-for-claude-code](https://github.com/obra/superpowers-developing-for-claude-code) — гайд по разработке плагинов и скиллов для Claude Code (121 ⭐)
+
+**Claude Code plugins & workflow:**
+- [obra/double-shot-latte](https://github.com/obra/double-shot-latte) — плагин, автоматически оценивающий должен ли Claude продолжить работу вместо преждевременной остановки (106 ⭐)
+- [obra/episodic-memory](https://github.com/obra/episodic-memory) — семантический поиск по истории Claude Code сессий; находит связанные контексты и решения из прошлых разговоров (358 ⭐)
+- [obra/cc-plugin-decision-log](https://github.com/obra/cc-plugin-decision-log) — плагин-лог решений: сохраняет на диск что решили и почему, переживает compaction и смену сессии (23 ⭐)
+- [obra/claude-session-driver](https://github.com/obra/claude-session-driver) — запускать несколько Claude Code сессий как воркеров через tmux и управлять ими программно (76 ⭐)
+
+**MCP servers:**
+- [obra/private-journal-mcp](https://github.com/obra/private-journal-mcp) — MCP для личного журнала Claude: обрабатывает мысли и ощущения между сессиями (337 ⭐)
+- [obra/knowledge-graph](https://github.com/obra/knowledge-graph) — Obsidian vault как knowledge graph с семантическим поиском и path finding; включает Claude Code plugin (70 ⭐)
+
 ### Reference
 - [Anthropic CLAUDE.md](https://github.com/anthropics/claude-code-action/blob/main/CLAUDE.md) — official reference implementation from Anthropic
 - [Claude Code hooks docs](https://docs.anthropic.com/en/docs/claude-code/hooks)
