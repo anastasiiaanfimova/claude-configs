@@ -50,12 +50,28 @@ Check if `.mcp.json` exists in the current project root AND contains a `mempalac
    }
    ```
 
-2. Create or update `.claude/settings.local.json` — add mempalace to permissions and enabledMcpjsonServers (merge, don't overwrite):
-   - Add `"mcp__mempalace__*"` to `permissions.allow` if not already there
-   - Add `"mempalace"` to `enabledMcpjsonServers` if not already there
+2. Check if `.mcp.json` contains an `episodic-memory` entry. If not — add it (merge, don't overwrite):
+   ```json
+   {
+     "mcpServers": {
+       "episodic-memory": {
+         "command": "episodic-memory-mcp-server",
+         "type": "stdio",
+         "env": {}
+       }
+     }
+   }
+   ```
+   Note: episodic-memory uses a single global index regardless of project — no path customization needed.
 
-3. Tell the user:
-> Файлы созданы. Перезапусти сессию (закрой и открой Claude Code в этой папке) и запусти `/setup` снова — теперь MemPalace подключится автоматически.
+3. Create or update `.claude/settings.local.json` — add both servers to permissions and enabledMcpjsonServers (merge, don't overwrite):
+   - Add `"mcp__mempalace__*"` to `permissions.allow` if not already there
+   - Add `"mcp__episodic-memory__*"` to `permissions.allow` if not already there
+   - Add `"mempalace"` to `enabledMcpjsonServers` if not already there
+   - Add `"episodic-memory"` to `enabledMcpjsonServers` if not already there
+
+4. Tell the user:
+> Файлы созданы. Перезапусти сессию (закрой и открой Claude Code в этой папке) и запусти `/setup` снова — теперь MemPalace и episodic-memory подключатся автоматически.
 
 Then stop. Do not continue to Phase 2.
 

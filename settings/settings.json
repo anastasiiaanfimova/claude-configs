@@ -35,6 +35,16 @@
           {
             "type": "command",
             "command": "MEMPALACE_AGENT=claude MEMPALACE_PALACE_PATH=$(bash ~/.mempalace/palace_detect.sh) cat | ~/.mempalace/venv/bin/python3 ~/.mempalace/hook_agent.py stop"
+          },
+          {
+            "type": "command",
+            "command": "episodic-memory sync",
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.claude/scripts/cleanup_history.sh\"",
+            "async": true
           }
         ]
       }
@@ -75,7 +85,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "bash \"$HOME/.claude/statusline.sh\""
+    "command": "bash \"$HOME/.claude/scripts/statusline.sh\""
   },
   "enabledPlugins": {
     "warp@claude-code-warp": true,

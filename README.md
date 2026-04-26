@@ -17,10 +17,11 @@ This setup layers three independent memory systems on top of Claude Code. Each s
 | Layer | Tool | What it remembers |
 |-------|------|-------------------|
 | **Cross-session agent memory** | [MemPalace](https://github.com/MemPalace/mempalace) | Who the user is, project context, feedback, preferences — persists across sessions in a diary + knowledge graph |
+| **Conversation search** | [episodic-memory](https://github.com/Anthropic/episodic-memory) | Full-text index of past Claude Code sessions — searchable by topic, code, or question. Synced at session end. |
 | **Codebase structure** | [code-review-graph](https://github.com/tirth8205/code-review-graph) | Functions, classes, call relationships, imports — parsed from source with Tree-sitter, queryable as a graph |
 | **In-project notes** | Claude Code built-in auto-memory | Markdown files in `~/.claude/projects/*/memory/` — facts Claude saves during sessions |
 
-None of these overlap: MemPalace is about the agent knowing the user, code-review-graph is about knowing the codebase, auto-memory is about in-project scratchpad facts.
+None of these overlap: MemPalace is about the agent knowing the user, episodic-memory is a searchable archive of raw conversation history, code-review-graph is about knowing the codebase, auto-memory is about in-project scratchpad facts.
 
 Since MemPalace captures everything important across sessions, raw `.jsonl` session logs are just disk clutter. Run `claude-cleanup` (a shell alias) manually whenever you want to prune logs older than 30 days. The `memory/` directory is always preserved.
 
@@ -38,6 +39,11 @@ UserPromptSubmit → MemPalace session-start
 Stop             → MemPalace stop hook (sync)
                    Claude writes a diary entry + KG facts at end of session.
                    This is how memories actually get saved.
+                 → episodic-memory sync (async)
+                   Indexes the finished session so it's searchable later.
+                 → cleanup_history.sh (async)
+                   Trims hook-approvals.log to 500 lines; prunes .jsonl session
+                   logs older than 30 days.
 
 StopFailure      → MemPalace stop hook (sync, crash path)
                    Same as Stop, but fires when the session ends due to an
