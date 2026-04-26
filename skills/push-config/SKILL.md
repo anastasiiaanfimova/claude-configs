@@ -201,18 +201,22 @@ Read `/tmp/claude-configs/README.md` and verify these sections match the current
 - **Memory stack** (any change): tool names, descriptions — must match tools actually configured
 - **Credentials / vault** (`CLAUDE.md` changed): vault names, workflow still accurate
 
-**Agents completeness check** (always run, not just when `agents/` changed):
-1. List all files in `/tmp/claude-configs/agents/`
-2. List all agent names mentioned in the README agents tables (grep for backtick-quoted names in table rows under the `### agents/` section)
-3. For every agent file in the repo → must have a row in README. If missing → add it (read the agent file for description and model)
-4. For every agent row in README → must have a file in the repo. If file is gone → remove the row
-5. Do the same cross-check for `scripts/` — every file in `scripts/` must be described
+**Completeness check — run for every directory (always, not just when that dir changed):**
 
-**Skills completeness check** (always run):
-1. List all skill dirs in `/tmp/claude-configs/skills/`
-2. List all skill names in README skills tables
-3. For every skill dir in repo → must have a row in README. If missing → add it (read `SKILL.md` description)
-4. For every skill row in README → must have a dir in the repo. If dir is gone → remove the row
+For each directory below, cross-check repo contents vs README entries. Add missing rows, remove stale rows.
+
+| Repo dir | README section to check | Row key | How to write a new row |
+|---|---|---|---|
+| `agents/` | `### \`agents/\`` tables | filename without `.md` | read agent file for description + model |
+| `skills/` | `### \`skills/\`` tables | dir name | read `SKILL.md` description field |
+| `scripts/` | `### \`scripts/\`` table | filename | read file header comment for purpose |
+| `hooks/` | `### \`settings/settings.json\`` hooks block + `hooks/pre-commit` section | filename | describe what the file does |
+| `commands/` | `### \`commands/setup.md\`` section | command name | read file for what it does |
+
+Rules:
+- **File in repo but no row in README** → add the row
+- **Row in README but no file in repo** → remove the row
+- **File content changed** → verify the row description still matches
 
 **Link rule — real links only.** Every tool or product mentioned in README must have a working URL. When adding or editing a mention:
 1. Check if the tool already has a link in README — if yes, keep it
