@@ -118,15 +118,33 @@ cp /tmp/claude_anon.md /tmp/claude-configs/CLAUDE.md
 
 For **agents/**: loop over all `~/.claude/agents/*.md`, anonymize each, compare with repo file, copy if changed. Also check for **new files** (in local but not in repo) and **deleted files** (in repo but not in local) — add or remove accordingly.
 
-For **skills** — iterate over each name in **PUBLIC_SKILLS** (from Config above):
+For **skills** — iterate over each name in **PUBLIC_SKILLS** (from Config above).
+Use a heredoc — `for name in $VAR` doesn't word-split in zsh:
 
 ```bash
-src="$HOME/.claude/skills/$name/SKILL.md"
-dest="/tmp/claude-configs/skills/$name/SKILL.md"
-[ -f "$src" ] || continue
-mkdir -p "$(dirname "$dest")"
-python3 /tmp/anon.py < "$src" > /tmp/skill_anon.md
-diff /tmp/skill_anon.md "$dest" > /dev/null 2>&1 || cp /tmp/skill_anon.md "$dest"
+while IFS= read -r name; do
+  [ -z "$name" ] && continue
+  src="/Users/<user>/.claude/skills/$name/SKILL.md"
+  dest="/tmp/claude-configs/skills/$name/SKILL.md"
+  [ -f "$src" ] || { echo "WARNING: $src not found, skipping"; continue; }
+  mkdir -p "$(dirname "$dest")"
+  python3 /tmp/anon.py < "$src" > /tmp/skill_anon.md
+  if [ ! -f "$dest" ]; then
+    cp /tmp/skill_anon.md "$dest"
+    echo "NEW: $name"
+  elif ! diff -q /tmp/skill_anon.md "$dest" > /dev/null 2>&1; then
+    cp /tmp/skill_anon.md "$dest"
+    echo "CHANGED: $name"
+  fi
+done << 'SKILLS'
+claude-tooling
+push-claude-config
+setup-project
+cleanup-history
+cleanup-claude
+cleanup-mac
+find-skills
+SKILLS
 ```
 
 ### Step 2b — Remove stale skills from repo
@@ -134,8 +152,14 @@ diff /tmp/skill_anon.md "$dest" > /dev/null 2>&1 || cp /tmp/skill_anon.md "$dest
 Delete any skill dir in `/tmp/claude-configs/skills/` whose name is **not** in PUBLIC_SKILLS:
 
 ```bash
-git -C /tmp/claude-configs rm -r "skills/$name"
-echo "DELETED stale skill from repo: skills/$name"
+for dir in /tmp/claude-configs/skills/*/; do
+  skill_name=$(basename "$dir")
+  case "$skill_name" in
+    claude-tooling|push-claude-config|setup-project|cleanup-history|cleanup-claude|cleanup-mac|find-skills) ;;
+    *) git -C /tmp/claude-configs rm -r "skills/$skill_name"
+       echo "DELETED stale skill from repo: $skill_name" ;;
+  esac
+done
 ```
 
 ### Step 2c — Privacy scan
