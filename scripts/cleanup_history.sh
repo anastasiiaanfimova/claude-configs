@@ -2,8 +2,14 @@
 # Auto-cleanup of Claude Code conversation history older than 30 days
 # Runs on session Stop hook. Keeps current session and memory/ dirs intact.
 
+# Trim hook-approvals.log to last 500 lines
+LOG="$HOME/.claude/hook-approvals.log"
+if [ -f "$LOG" ] && [ "$(wc -l < "$LOG")" -gt 500 ]; then
+  tail -500 "$LOG" > "${LOG}.tmp" && mv "${LOG}.tmp" "$LOG"
+fi
+
 PROJECTS_DIR="$HOME/.claude/projects"
-MAX_AGE_DAYS=7
+MAX_AGE_DAYS=30
 
 find "$PROJECTS_DIR" -maxdepth 2 -name "*.jsonl" \
   ! -newer "$PROJECTS_DIR" \

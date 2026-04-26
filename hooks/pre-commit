@@ -6,15 +6,20 @@
 #   chmod +x ~/.git-hooks/pre-commit
 #   git config --global core.hooksPath ~/.git-hooks
 #
-# Then edit ~/.git-hooks/pre-commit and fill in your FORBIDDEN words (never commit that file).
+# Then create ~/.git-hooks/pre-commit.local with your private names:
+#
+#   FORBIDDEN=(myproject internal-tool)
+#
+# The .local file is never committed — add it to your global gitignore if needed.
+# This script reads FORBIDDEN from .local if it exists; falls back to empty list.
+
+# --- Load local forbidden words ---
+FORBIDDEN=()
+LOCAL_FILE="$(dirname "$0")/pre-commit.local"
+[ -f "$LOCAL_FILE" ] && source "$LOCAL_FILE"
 
 # --- Config ---
 OWNER="anastasiiaanfimova"   # only scan repos under this GitHub owner
-FORBIDDEN=(
-  # add your private project/vault/service names here — keep this local, don't commit
-  # myproject
-  # internal-tool
-)
 
 # --- Check if this is a target repo ---
 REMOTE_URL=$(git remote get-url origin 2>/dev/null)
@@ -30,6 +35,9 @@ if command -v gh &>/dev/null; then
     exit 0
   fi
 fi
+
+# Skip if no forbidden words defined
+[ ${#FORBIDDEN[@]} -eq 0 ] && exit 0
 
 # --- Scan staged diff for forbidden words ---
 FOUND=0

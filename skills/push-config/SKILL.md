@@ -34,6 +34,7 @@ Local:  /tmp/claude-configs
 | `~/.claude/commands/setup.md` | `commands/setup.md` |
 | `~/.mempalace/hook_agent.py` | `hooks/hook_agent.py` |
 | `~/.mempalace/palace_detect.sh` | `scripts/palace_detect.sh` |
+| `~/.claude/scripts/cleanup_history.sh` | `scripts/cleanup_history.sh` |
 
 **Skills** — only the ones in this allowlist are synced (others may contain private project references):
 ```
@@ -134,7 +135,7 @@ for name in claude-tooling push-config; do
 done
 ```
 
-For **hook_agent.py** and **palace_detect.sh**: same pattern.
+For **hook_agent.py**, **palace_detect.sh**, and **cleanup_history.sh**: same pattern.
 
 ### Step 2b — Remove stale skills from repo
 
@@ -220,10 +221,17 @@ Edit `/tmp/claude-configs/README.md` directly for any outdated sections. The REA
 
 ### Step 5 — Commit and push
 
+Run the pre-commit hook explicitly with local forbidden words before committing:
+
 ```bash
 cd /tmp/claude-configs
-
 git add -A
+
+# Run pre-commit hook with local FORBIDDEN list
+HOOK="$HOME/.git-hooks/pre-commit"
+if [ -f "$HOOK" ]; then
+  bash "$HOOK" || { echo "Pre-commit hook blocked the commit. Fix leaks and re-run."; exit 1; }
+fi
 
 CHANGED_FILES=$(git diff --cached --name-only | tr '\n' ' ')
 git commit -m "sync configs $(date +%Y-%m-%d): $CHANGED_FILES"

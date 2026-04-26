@@ -215,8 +215,9 @@ Helper scripts used by the hooks and tooling.
 | Script | What it does |
 |--------|-------------|
 | `palace_detect.sh` | Resolves which MemPalace palace to use for the current directory. Walks up the directory tree looking for a `.mcp.json` with a `mempalace` entry; falls back to `~/.mempalace/palace`. Used in all hook commands so the right palace is always targeted. |
+| `cleanup_history.sh` | Runs on session Stop (async hook). Trims `hook-approvals.log` to 500 lines; prunes `.jsonl` session logs older than 30 days. |
 
-> **Local-only scripts** not in this repo: `statusline.sh` (populates the Claude Code status bar) and `cleanup_history.sh` (trims `hook-approvals.log` to 500 lines, prunes session logs older than 30 days). Both live in `~/.claude/scripts/` on the local machine and are wired into hooks via `settings.json`.
+> **Local-only:** [`statusline.sh`](https://github.com/anastasiiaanfimova/claude-statusline) — populates the Claude Code status bar. Lives in `~/.claude/scripts/` and is wired via `statusLine` in `settings.json`. See the linked repo for setup.
 
 ### `skills/`
 
@@ -270,4 +271,10 @@ chmod +x ~/.git-hooks/pre-commit
 git config --global core.hooksPath ~/.git-hooks
 ```
 
-Then edit `~/.git-hooks/pre-commit` and fill in `FORBIDDEN=()` with your private project names. The `FORBIDDEN` array in the committed version is intentionally empty — private names must stay local and never be committed.
+Then create `~/.git-hooks/pre-commit.local` with your actual forbidden words:
+
+```bash
+FORBIDDEN=(myproject internal-service vault-name)
+```
+
+The hook reads `FORBIDDEN` from `.local` if it exists; falls back to an empty list if the file is absent. The `.local` file is gitignored — keep it on the local machine only, never commit it. The `/push-config` skill also runs this hook explicitly before each commit.
