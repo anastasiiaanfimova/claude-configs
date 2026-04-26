@@ -40,11 +40,6 @@
             "type": "command",
             "command": "episodic-memory sync",
             "async": true
-          },
-          {
-            "type": "command",
-            "command": "bash \"$HOME/.claude/scripts/cleanup_history.sh\"",
-            "async": true
           }
         ]
       }

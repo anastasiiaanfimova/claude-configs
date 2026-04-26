@@ -32,8 +32,6 @@ Local:  /tmp/claude-configs
 | `~/.claude/settings.json` | `settings/settings.json` |
 | `~/.claude/agents/*.md` | `agents/` |
 | `~/.claude/skills/setup/SKILL.md` | `skills/setup/SKILL.md` |
-| `~/.mempalace/palace_detect.sh` | `scripts/palace_detect.sh` |
-| `~/.claude/scripts/cleanup_history.sh` | `scripts/cleanup_history.sh` |
 
 **Skills** — only the ones in this allowlist are synced (others may contain private project references):
 ```
@@ -127,8 +125,6 @@ for name in claude-tooling push-config setup; do
   diff /tmp/skill_anon.md "$dest" > /dev/null 2>&1 || cp /tmp/skill_anon.md "$dest"
 done
 ```
-
-For **palace_detect.sh** and **cleanup_history.sh**: same pattern.
 
 ### Step 2b — Remove stale skills from repo
 

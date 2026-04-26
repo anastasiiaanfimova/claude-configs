@@ -41,10 +41,6 @@ Stop             → MemPalace stop hook (sync)
                    This is how memories actually get saved.
                  → episodic-memory sync (async)
                    Indexes the finished session so it's searchable later.
-                 → cleanup_history.sh (async, local-only)
-                   Trims hook-approvals.log to 500 lines; prunes .jsonl session
-                   logs older than 30 days. Script lives in ~/.claude/scripts/
-                   on the local machine — not in this repo.
 
 StopFailure      → MemPalace stop hook (sync, crash path)
                    Same as Stop, but fires when the session ends due to an
@@ -191,17 +187,6 @@ Agents for separate self-hosted projects. These are **project-scoped** — not i
 |-------|-------------|-------|
 | `hermes-admin` | [Hermes](https://github.com/anastasiiaanfimova/hermes-docker) config — Docker setup, channels, Infisical secrets, entrypoint debugging. | sonnet |
 
-### `scripts/`
-
-Helper scripts used by the hooks and tooling.
-
-| Script | What it does |
-|--------|-------------|
-| `palace_detect.sh` | Resolves which MemPalace palace to use for the current directory. Walks up the directory tree looking for a `.mcp.json` with a `mempalace` entry; falls back to `~/.mempalace/palace`. Used in all hook commands so the right palace is always targeted. |
-| `cleanup_history.sh` | Runs on session Stop (async hook). Trims `hook-approvals.log` to 500 lines; prunes `.jsonl` session logs older than 30 days. |
-
-> **Local-only:** [`statusline.sh`](https://github.com/anastasiiaanfimova/claude-statusline) — populates the Claude Code status bar. Lives in `~/.claude/scripts/` and is wired via `statusLine` in `settings.json`. See the linked repo for setup.
-
 ### `hooks/`
 
 Two files that extend the hook infrastructure.
@@ -209,6 +194,8 @@ Two files that extend the hook infrastructure.
 | File | What it does |
 |------|-------------|
 | `pre-commit` | Global git pre-commit hook — blocks private project names from leaking into public repos. Reads the scan pattern from `~/.claude/skills/push-config/replacements.md` (SCAN: line). Runs only for public repos under `anastasiiaanfimova`. |
+
+> **Local-only scripts** (not in this repo): [`statusline.sh`](https://github.com/anastasiiaanfimova/claude-statusline) — populates the status bar; `cleanup_history.sh` — manual history cleanup (invoked via `/cleanup-history` skill); `palace_detect.sh` — lives in `~/.mempalace/`, part of the MemPalace installation.
 
 ### `skills/`
 
@@ -238,6 +225,7 @@ Built for QA work on an AI SaaS product — backend + web, analytics events, asy
 
 | Skill | What it does |
 |---|---|
+| `cleanup-history` | Manual Claude Code history cleanup. Shows what will be deleted (log size, old session files), asks for confirmation, then runs. Use instead of the automatic Stop hook — run when you actually want to prune. |
 | `setup` | One-time project initialization. Configures `.mcp.json` and `.claude/settings.local.json` for MemPalace + episodic-memory, creates project memory files, checks code-review-graph, adds the project to the KG, and writes a diary entry. Automatically picks the right palace strategy: shared palace for sub-projects inside `~/Claude/`, isolated palace for top-level projects. |
 | `claude-tooling` | Cross-project Claude tooling audit. Reads MemPalace across all project wings + diary, searches the web for new Claude Code / Anthropic updates, compares against an existing `IMPROVEMENTS.md` in a GitHub repo, and pushes an updated file with status tracking (🔄 pending / ✅ done / 🆕 new / 📡 new in Claude). Fully autonomous — auto-commits and pushes. No user input needed. |
 | `push-config` | Syncs `~/.claude/` files to this GitHub repo. Diffs local vs repo, anonymizes private project names, commits only changed files. Handles CLAUDE.md, settings.json, all agents, public skills, MemPalace hooks, and palace_detect.sh. Updates README if content changed. |
