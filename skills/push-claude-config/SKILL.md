@@ -119,11 +119,10 @@ cp /tmp/claude_anon.md /tmp/claude-configs/CLAUDE.md
 
 For **agents/**: loop over all `~/.claude/agents/*.md`, anonymize each, compare with repo file, copy if changed. Also check for **new files** (in local but not in repo) and **deleted files** (in repo but not in local) — add or remove accordingly.
 
-For **skills** — iterate over each name in **PUBLIC_SKILLS** (from Config above).
-Define the list once as a variable, reuse in Step 2b:
+For **skills** — read PUBLIC_SKILLS from Config above and build the array using this template (substitute the names from Config, space-separated):
 
 ```bash
-PUBLIC_SKILLS=(claude-tooling push-claude-config setup-project cleanup-history cleanup-claude cleanup-mac find-skills update-tooling)
+PUBLIC_SKILLS=(<names from Config>)
 
 for name in "${PUBLIC_SKILLS[@]}"; do
   src="/Users/<user>/.claude/skills/$name/SKILL.md"
@@ -143,7 +142,7 @@ done
 
 ### Step 2b — Remove stale skills from repo
 
-Delete any skill dir in `/tmp/claude-configs/skills/` whose name is **not** in PUBLIC_SKILLS (use the variable set in Step 2):
+Delete any skill dir in `/tmp/claude-configs/skills/` whose name is **not** in PUBLIC_SKILLS (reuse `$PUBLIC_SKILLS` array from Step 2):
 
 ```bash
 for dir in /tmp/claude-configs/skills/*/; do
@@ -280,4 +279,4 @@ git -C /tmp/claude-configs log --oneline -1
 - **Pre-commit hook** (`hooks/pre-commit`) reads the scan pattern from `replacements.md` (SCAN: line) automatically — no manual sync needed. Override via `~/.git-hooks/pre-commit.local` (FORBIDDEN array) if needed; gitignored. The hook is run explicitly in Step 5 before every commit.
 - `settings.local.json` is **never** synced — it's machine-local (paths, personal tokens).
 - Project-scoped agents (e.g. in `~/Hermes/.claude/agents/`) are never synced here — only `~/.claude/agents/`.
-- To add a skill: update **PUBLIC_SKILLS** in Config above — that's the single source of truth. Steps 2 and 2b both derive from it.
+- To add a skill: update **PUBLIC_SKILLS** in Config above — that's the only place to edit. Step 2 reads the list from there at runtime.

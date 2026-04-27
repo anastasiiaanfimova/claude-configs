@@ -31,11 +31,13 @@ Since MemPalace captures everything important across sessions, raw `.jsonl` sess
 
 Five hooks that wire the memory stack and safety layer into Claude Code:
 
-```
-UserPromptSubmit → MemPalace session-start
-                   Loads relevant memories into context before each message.
-                   Without this, MemPalace exists but Claude never reads it.
+> **Note (2026-04-27):** `UserPromptSubmit` is temporarily disabled due to a regression in
+> MemPalace v3.3.3 ([#1212](https://github.com/MemPalace/mempalace/issues/1212),
+> [#1217](https://github.com/MemPalace/mempalace/issues/1217)) that causes `mine` processes
+> to spawn concurrently and run at 100% CPU on large projects. Currently on v3.3.2.
+> Re-enable once those issues are fixed upstream.
 
+```
 Stop             → MemPalace stop hook (sync)
                    Claude writes a diary entry + KG facts at end of session.
                    This is how memories actually get saved.
