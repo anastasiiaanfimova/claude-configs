@@ -17,6 +17,17 @@
         ]
       }
     ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat | MEMPALACE_PALACE_PATH=$(bash ~/.mempalace/palace_detect.sh) ~/.mempalace/venv/bin/python3 -m mempalace hook run --hook session-start --harness claude-code"
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "matcher": "",
@@ -40,6 +51,18 @@
           {
             "type": "command",
             "command": "MEMPALACE_PALACE_PATH=$(bash ~/.mempalace/palace_detect.sh) cat | ~/.mempalace/venv/bin/python3 -m mempalace hook run --hook stop --harness claude-code"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "MEMPALACE_PALACE_PATH=$(bash ~/.mempalace/palace_detect.sh) cat | ~/.mempalace/venv/bin/python3 -m mempalace hook run --hook precompact --harness claude-code",
+            "async": true
           }
         ]
       }
