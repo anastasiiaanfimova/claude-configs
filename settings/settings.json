@@ -44,18 +44,6 @@
         ]
       }
     ],
-    "PreCompact": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "MEMPALACE_PALACE_PATH=$(bash ~/.mempalace/palace_detect.sh) cat | ~/.mempalace/venv/bin/python3 -m mempalace hook run --hook precompact --harness claude-code",
-            "async": true
-          }
-        ]
-      }
-    ],
     "SessionStart": [
       {
         "matcher": "",

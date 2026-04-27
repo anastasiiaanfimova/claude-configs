@@ -29,13 +29,7 @@ Since MemPalace captures everything important across sessions, raw `.jsonl` sess
 
 ### `settings/settings.json`
 
-Five hooks that wire the memory stack and safety layer into Claude Code:
-
-> **Note (2026-04-27):** `UserPromptSubmit` is temporarily disabled due to a regression in
-> MemPalace v3.3.3 ([#1212](https://github.com/MemPalace/mempalace/issues/1212),
-> [#1217](https://github.com/MemPalace/mempalace/issues/1217)) that causes `mine` processes
-> to spawn concurrently and run at 100% CPU on large projects. Currently on v3.3.2.
-> Re-enable once those issues are fixed upstream.
+Four hooks that wire the memory stack and safety layer into Claude Code:
 
 ```
 Stop             → MemPalace stop hook (sync)
@@ -48,10 +42,6 @@ StopFailure      → MemPalace stop hook (sync, crash path)
                    Same as Stop, but fires when the session ends due to an
                    API error (rate limit, auth failure, etc.).
 
-PreCompact       → MemPalace precompact hook
-                   Before Claude Code compresses the context window, important
-                   facts are written to MemPalace so they survive compaction.
-
 SessionStart     → code-review-graph check
                    Warns if the codebase graph hasn't been initialized yet.
                    Reminds you to run `code-review-graph build` in new projects.
@@ -62,6 +52,26 @@ PreToolUse       → [dippy](https://github.com/ldayton/Dippy) (Bash commands)
                    ones; prompts for anything in between. Configured via
                    ~/.dippy/config. Install: brew tap ldayton/dippy && brew install dippy
 ```
+
+> **MemPalace hook workarounds (as of v3.3.3, 2026-04-27):**
+>
+> Two hooks are temporarily disabled due to upstream bugs in MemPalace:
+>
+> **`UserPromptSubmit`** (removed earlier) — was running `mempalace mine` on every message.
+> On large projects this caused 100% CPU and uncontrolled parallel `mine` processes.
+>
+> **`PreCompact`** (removed 2026-04-27) — fires mid-session before context compaction.
+> Combined with an unfixed bug in `_ingest_transcript` (no PID guard), each PreCompact + Stop
+> combination was spawning 2–3 concurrent `mine` processes, each eating 90%+ CPU.
+>
+> **Local patch applied** to `~/.mempalace/venv/.../mempalace/hooks_cli.py`:
+> `_ingest_transcript()` now checks `_mine_already_running()` before spawning and writes
+> the PID to `_MINE_PID_FILE` so the guard actually works. This patch is lost on `pip upgrade`.
+>
+> Relevant open issues — re-enable hooks once these are resolved upstream:
+> - [#1212](https://github.com/MemPalace/mempalace/issues/1212) — Stop hook spawns concurrent `mine` processes that bypass PID guard
+> - [#1083](https://github.com/MemPalace/mempalace/issues/1083) — Stop + PreCompact auto-run `mine` with no opt-out
+> - [#1110](https://github.com/MemPalace/mempalace/issues/1110) — feat: split `hooks.auto_save` and `hooks.auto_mine` (config option to disable mine without removing diary saves)
 
 > **Requirements:** MemPalace installed at `~/.mempalace/`, code-review-graph MCP connected. If you don't use these tools, the hook structure is still a useful reference — swap in your own commands.
 
