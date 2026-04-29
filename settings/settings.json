@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "mcp__mempalace__*"
+      "mcp__mempalace__*",
+      "Read(/tmp/*)",
+      "Write(/tmp/*)",
+      "Edit(/tmp/*)"
     ]
   },
   "model": "sonnet",
