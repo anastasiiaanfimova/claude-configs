@@ -12,7 +12,7 @@ Superpowers skills are invoked with `superpowers:<skill-name>` (e.g. `superpower
 
 ## Memory stack
 
-This setup layers three independent memory systems on top of Claude Code. Each solves a different problem:
+This setup layers four independent memory systems on top of Claude Code. Each solves a different problem:
 
 | Layer | Tool | What it remembers |
 |-------|------|-------------------|
@@ -61,7 +61,7 @@ PreToolUse       → [dippy](https://github.com/ldayton/Dippy) (Bash commands)
                    ~/.dippy/config. Install: brew tap ldayton/dippy && brew install dippy
 ```
 
-> **MemPalace workarounds (as of v3.3.3, 2026-04-27):**
+> **MemPalace workarounds (as of v3.3.1 stable, 2026-04-29):**
 >
 > All six hooks are active. The `mine` (indexing) sub-process is disabled via a local venv patch —
 > all hooks run normally and diary saves work, but `mempalace mine` is never spawned.
@@ -168,9 +168,16 @@ If Claude is launched from any other directory, MemPalace is simply unavailable 
 
 ### `CLAUDE.md`
 
-The **global** `~/.claude/CLAUDE.md` contains the MemPalace protocol and credential management rules. The MemPalace section instructs Claude to call `mempalace_status` at session start, search before answering about people/projects, and write diary at session end. The credential section instructs Claude to never write API keys to shell files and always redirect to the right Infisical project/folder instead.
+The **global** `~/.claude/CLAUDE.md` contains:
 
-The `code-review-graph` block that was here previously is **project-specific** — it belongs in a project's own `CLAUDE.md` or `.claude/CLAUDE.md`, not in the global file. Copy it into any project where you've run `code-review-graph build`.
+- **Memory protocol** — three layers used in parallel at session start (MemPalace + episodic-memory + auto-memory files), each for different lookup needs (facts vs. specific words/commands vs. behavior rules)
+- **Project context separation** — never mix knowledge across projects unless explicitly asked
+- **Credential management** — API keys and tokens never go to shell files, always Infisical
+- **code-review-graph** — generic instructions on using the graph tools before falling back to Grep/Glob/Read in any project that has `.code-review-graph/` initialized
+- **Engineering principles** — multi-pass discipline, OOP (Encapsulation/Inheritance/Polymorphism/Abstraction), DRY/KISS/SOLID/BDUF/SoC, PoC→MVP rollout
+- **Behavioral rules** — pacing, session-continue handling, git privacy for public repos, skill naming convention, avoided phrasing
+- **Behavioral rule scoping** — when saving a new rule, decide cross-project vs. project-specific vs. infrastructure-fact and route to the right file
+- **Superpowers overrides** — exceptions to brainstorming hard-gate for action-oriented skills, memory protocol priority over skill invocation
 
 ### `agents/`
 

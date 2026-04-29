@@ -6,7 +6,6 @@ description: >-
   shows diffs, commits only changed files. Fully automatic.
   Trigger: "push-claude-config", "обнови claude-configs", "запуши конфиги",
   "sync configs", "пуш конфигов".
-version: 0.1.0
 ---
 
 # Sync Claude Configs
@@ -62,7 +61,7 @@ To add a new private project name, append a line:
 ```
 Then update the `SCAN:` line at the bottom of that file to include it.
 
-**Never anonymize:** `openclaw`, `hermes`, `claude`, `mempalace`, `anastasiiaanfimova` (GitHub owner).
+**Never anonymize:** `hermes`, `claude`, `mempalace`, `anastasiiaanfimova` (GitHub owner).
 
 ---
 

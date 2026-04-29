@@ -7,7 +7,6 @@ description: >-
   Fully automatic — no user input needed.
   Trigger: "claude-tooling", "что улучшить в Claude", "аудит клода",
   "новое в Claude Code", "обнови improvements".
-version: 0.1.0
 ---
 
 # Claude Tooling — Cross-Project Audit
@@ -57,6 +56,8 @@ Extract: recurring themes, mentioned gaps, workarounds that suggest missing auto
 `mcp__mempalace__mempalace_diary_read` with `agent_name=claude`, `last_n=40`.
 
 Filter to last **14 days**. Note actual date range (earliest → latest).
+
+If a diary entry is too compressed to understand what exactly happened → supplement with `mcp__episodic-memory__search` using the entry date + key term from the entry (e.g. `"2026-04-28 hook error"`). Episodic has the full conversation text for that session.
 
 Extract:
 - Anything that required multiple retries or workarounds

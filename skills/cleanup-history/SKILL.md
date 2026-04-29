@@ -5,7 +5,6 @@ description: >-
   confirmation, then cleans. Trims hook-approvals.log to 500 lines; removes
   .jsonl session logs older than 30 days; removes orphaned subagent dirs.
   Trigger: "cleanup history", "почисти историю", "claude-cleanup", "прибраться в истории".
-version: 1.0.0
 ---
 
 ## Your task

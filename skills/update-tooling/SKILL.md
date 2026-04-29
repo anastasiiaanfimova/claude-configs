@@ -41,10 +41,14 @@ Store these values — they'll be used in the final report.
 
 Run the pip/uv/pipx/git updates in parallel, then claude plugin updates sequentially (the CLI doesn't support concurrent plugin operations).
 
+**⚠️ Перед обновлением mempalace:**
+Проверить `project_mempalace_patch.md` в memory текущего проекта — там записана стабильная версия и патч на `hooks_cli.py`. Мы намеренно остаёмся на pinned-версии из-за регрессий в новых. Если обновлять — только осознанно, и обязательно переприменить патч после.
+
 **Parallel:**
 ```bash
-# mempalace
+# mempalace — ОСТОРОЖНО: читай note выше. Если обновление ОК, запусти:
 /Users/<user>/.mempalace/venv/bin/pip install --upgrade mempalace 2>&1 | grep -E "Successfully|already"
+# После обновления mempalace — ОБЯЗАТЕЛЬНО переприменить патч hooks_cli.py (см. project_mempalace_patch.md)
 
 # code-review-graph
 uv tool upgrade code-review-graph 2>&1

@@ -5,7 +5,6 @@ description: >-
   code-review-graph, and project memory files. Run once per new project directory.
   Trigger: "/setup", "setup project", "инициализируй проект", "настрой проект",
   "первый запуск", "init project memory".
-version: 0.2.0
 ---
 
 ## Your task
@@ -90,7 +89,56 @@ Only run this phase if `mempalace_status` is available (MCP connected).
 **Step 1 — Check palace**
 Call `mempalace_status`, then `mempalace_search` using the project name to find any existing knowledge.
 
-**Step 2 — Create project memory files**
+**Step 2 — Seed organization rules (separate palace only)**
+
+Skip this step if the project is inside `~/Claude/` (shared palace — rules already exist in `wing_claude/decisions`).
+
+For independent projects with a separate palace: call `mempalace_add_drawer` to seed the organization rules so every new palace starts with structure:
+
+```
+wing: wing_<project-name>
+room: decisions
+source_file: mempalace-organization-rules
+content:
+  ## mempalace-organization-rules — правила хранения данных по MCP и тулам
+
+  ### Разграничение rooms для MCP/tools
+
+  | room | что хранить |
+  |------|-------------|
+  | `decisions` | правила, протоколы, архитектурные решения по самому palace |
+  | `config` | конфигурация MCP-серверов, пути, порты, параметры запуска |
+  | `rules` | поведенческие правила для агента (feedback от пользователя) |
+  | `recipes` | пошаговые инструкции: как установить, настроить, починить конкретный тул |
+
+  ### Паттерн именования
+
+  Drawer с данными по конкретному MCP-инструменту называть: `<toolname>.mcp`
+  Примеры: `mempalace.mcp`, `testiny.mcp`, `asana.mcp`, `grafana.mcp`
+
+  ### Что НЕ хранить в palace
+
+  - Вывод команд целиком (логи, stdout) — только выводы
+  - Данные, которые можно получить из кода или git-истории
+  - Ephemeral state (текущие значения переменных, временные ID)
+  - Дублирующие drawer без новой информации
+
+  ### Протокол чистки дублей
+
+  При обнаружении двух drawer с похожим содержимым:
+  - A ⊂ B (A полностью покрыт B) → удалить A, оставить B
+  - Оба содержат уникальные детали → мержить в один, удалить оба исходных
+  - Проверять через `mempalace_check_duplicate` перед добавлением нового
+
+  ### Протокол добавления нового MCP
+
+  1. `mempalace_check_duplicate` — убедиться что такого drawer ещё нет
+  2. Если нет — создать drawer `<toolname>.mcp` в `config` с: путём к серверу, командой запуска, scope (user/project), проектами где используется
+  3. Если рецепт установки нетривиален — отдельный drawer в `recipes`
+  4. После подключения — запись в diary о том что MCP добавлен и зачем
+```
+
+**Step 3 — Create project memory files**
 
 The project memory path is `~/.claude/projects/<encoded-path>/memory/` where `<encoded-path>` is the absolute path to the current directory with `/` replaced by `-`.
 
@@ -100,7 +148,7 @@ Create the following files if they don't already exist:
 ```
 # MEMORY.md
 
-- [MemPalace protocol](feedback_use_mempalace.md) — MemPalace first, file memory is backup; write diary at session end
+- [Memory protocol](feedback_use_mempalace.md) — старт: MemPalace + episodic параллельно; маршрутизация по типу вопроса; diary в конце
 ```
 
 **feedback_use_mempalace.md**:
@@ -113,21 +161,27 @@ type: feedback
 
 **КРИТИЧЕСКИ ВАЖНО — выполнять в каждой сессии, даже после компакта:**
 
-## При старте сессии:
+## При старте сессии (параллельно):
 1. Вызвать `mempalace_status`
 2. Вызвать `mempalace_search` по теме разговора или имени проекта
+3. Вызвать `mcp__episodic-memory__search` по сегодняшней дате + теме
 
-## Во время сессии:
-- Перед ответом о людях, проектах, прошлых событиях → `mempalace_search` или `mempalace_kg_query` ПЕРВЫМ
-- Файлы из memory/ — только если MemPalace не дал ответа
+## Во время сессии (маршрутизация по типу вопроса):
+- **Факты, решения, люди, проекты** → `mempalace_search` или `mempalace_kg_query`
+- **Конкретные слова, ошибки, команды, URL** → `mcp__episodic-memory__search` сразу
+- **"Что было в сессии где делали X"** → оба параллельно
+- Файлы из memory/ — только если оба не дали ответа
+
+## Дополнение diary:
+Если diary-запись слишком сжата и детали непонятны → `mcp__episodic-memory__search` по дате + ключевому слову
 
 ## В конце сессии:
 - Вызвать `mempalace_diary_write` — записать что произошло, что узнала, что важно
 
-**Why:** Проекты внутри ~/Claude/ используют общий palace (~/.mempalace/palace). Независимые проекты имеют свой изолированный palace. В обоих случаях MemPalace — основной источник памяти, файлы — резервный слой.
+**Why:** Проекты внутри ~/Claude/ используют общий palace (~/.mempalace/palace). Независимые проекты имеют свой изолированный palace. MemPalace и episodic — равноправные инструменты с разными ролями, не иерархия.
 ```
 
-**Step 3 — Set up code-review-graph**
+**Step 4 — Set up code-review-graph**
 
 Check if `.code-review-graph/` directory exists in the current project root.
 
@@ -141,7 +195,7 @@ Check if `.code-review-graph/` directory exists in the current project root.
 
 Don't run the command yourself — the user needs to run it manually in the project terminal.
 
-**Step 4 — Add project to MemPalace knowledge graph**
+**Step 5 — Add project to MemPalace knowledge graph**
 
 Call `mempalace_kg_add` with:
 - subject: project name (directory name)
@@ -150,11 +204,11 @@ Call `mempalace_kg_add` with:
 
 Ask the user: "Расскажи пару слов о проекте — что это, твоя роль, что важно помнить?" Then add what they say as additional KG facts.
 
-**Step 5 — Write diary entry**
+**Step 6 — Write diary entry**
 
 Call `mempalace_diary_write` with agent_name `claude`, topic = project name.
 Record: project name, setup date, what you learned about the project in this session.
 
-**Step 6 — Report**
+**Step 7 — Report**
 
 Tell the user what was set up and confirm the project is ready.

@@ -8,7 +8,6 @@ description: >-
   Trigger: "cleanup claude", "прибраться в клоде", "аудит конфигурации клода",
   "clean up skills", "что устарело", "check for stale references",
   "наведи порядок в конфигурации", "audit claude setup".
-version: 0.1.0
 ---
 
 # Cleanup Claude Setup

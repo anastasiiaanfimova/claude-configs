@@ -28,13 +28,22 @@ MCP server runs as:
 
 ## Wings and rooms (current structure)
 
-Active wings:
-- `wing_claude` — Claude's diary + project notes (54 drawers)
-- `wing_claw` — OpenClaw claw agent workspace
-- `claude` — legacy wing (4 drawers, should be migrated to wing_claude)
-- `wing_plants`, `wing_zozh` — OpenClaw agent workspaces
-- `wing_claude-code` — Claude Code specific entries
-- `sessions` — session metadata (3 drawers)
+Active wings (см. `mempalace_status` для актуальных count'ов):
+- `wing_claude` — Claude's primary palace: diary + projects + recipes + config + decisions
+- `wing_<project>` — <project> project workspace
+- `wing_claude-code`, `wing_claude-sonnet`, `wing_claude-haiku` — model-specific entries
+- `claude` — legacy wing (single drawer, can be migrated)
+
+OpenClaw decommissioned 2026-04-29 (folder + drawers удалены полностью).
+
+**ChromaDB 1.5.8 delete bug:** `col.delete(ids=[...])` no-op (Rust bindings регрессия). MCP `mempalace_delete_drawer` возвращает `success: true` но не удаляет. Workaround — прямой SQL DELETE на `chroma.sqlite3`:
+```sql
+BEGIN;
+DELETE FROM embedding_metadata WHERE id IN (SELECT id FROM embeddings WHERE embedding_id IN ('drawer_X', ...));
+DELETE FROM embeddings WHERE embedding_id IN ('drawer_X', ...);
+COMMIT;
+```
+Проверять backup перед DELETE: `cp ~/.mempalace/palace/chroma.sqlite3 ~/.Trash/chroma-backup-$(date +%Y%m%d).sqlite3`.
 
 ## Python API for bulk operations
 
@@ -140,5 +149,4 @@ echo '{}' | MEMPALACE_AGENT=claude ~/.mempalace/venv/bin/python ~/.mempalace/hoo
 - Don't delete drawers one by one — always bulk delete by wing or filter
 - Don't edit ChromaDB files directly — always use the Python API
 - Don't delete `wing_claude` diary entries — those are the primary memory
-- Don't run cleanup on OpenClaw's wings (wing_claw, workspace_*) without checking what's there first — those are agent workspaces
-- Don't confuse the local `~/.mempalace/palace` (Claude's palace) with `/home/node/.openclaw/mempalace/palace` (OpenClaw's palace — separate instance)
+- Don't delete `wing_<project>` без согласования с пользователем — это активный project workspace

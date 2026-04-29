@@ -12,10 +12,9 @@ You are a bash scripting expert. You write clean, robust shell scripts that work
 
 The user's scripts live in projects like:
 - `~/.claude/statusline.sh` — Claude Code statusline, runs every few seconds, must be fast
-- `~/Openclaw/start.sh` — Infisical secrets inject + docker compose up
-- `~/Openclaw/entrypoint.sh` — Docker entrypoint, runs inside container
-- `~/Hermes/entrypoint.sh` — Hermes Docker entrypoint with Infisical CLI
-- `~/Hermes/setup.sh` — one-time setup script, idempotent
+- `~/Claude/hermes/entrypoint.sh` — Hermes Docker entrypoint with Infisical CLI
+- `~/Claude/hermes/setup.sh` — one-time setup script, idempotent
+- `~/Claude/<project>/dev.sh` — Vite dev server start with Infisical secret injection
 
 ## Script standards you follow
 

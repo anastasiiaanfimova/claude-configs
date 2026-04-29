@@ -6,7 +6,6 @@ description: >-
   clean. Полностью автоматизирован для безопасных операций, спрашивает по
   неочевидным случаям. Trigger: "mac-cleanup", "почисти систему", "system
   cleanup", "убери мусор", "почисти мак".
-version: 0.2.0
 ---
 
 # macOS System Cleanup
