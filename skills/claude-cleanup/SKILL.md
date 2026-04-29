@@ -1,5 +1,5 @@
 ---
-name: cleanup-claude
+name: claude-cleanup
 description: >-
   Audit and clean up the Claude Code setup — find stale skill/agent references,
   duplicate sources of truth, unnecessary MCP wrappers, parasitic directories
@@ -71,14 +71,21 @@ Also check `~/.claude/mcp-servers/` — list what's there and flag any that are 
 
 ### 5 — Skills publish registry
 
-Read `~/.claude/skills/README.md`. Cross-check:
-- Every directory in `~/.claude/skills/` should have a row in the README
-- Every row in README should correspond to an existing directory
-- Skill name in README should match `name:` frontmatter in the SKILL.md
+Read `~/.claude/skills/REGISTRY.yml` (source of truth).
 
-Flag: missing rows, stale rows, name mismatches.
+**Check 1 — REGISTRY completeness:**
+- Every directory in `~/.claude/skills/` (excluding `REGISTRY.yml`) must appear in exactly one section of REGISTRY.yml
+- Every entry in skill sections (`claude-configs:`, `qa-playbook:`, `local:`) must correspond to an existing directory on disk
+- Every entry in `claude-configs-agents:` and `qa-playbook-agents:` must correspond to an existing file in `~/.claude/agents/`
+- Every file in `~/.claude/agents/` must appear in either `claude-configs-agents:` or `qa-playbook-agents:`
+- Auto-generated files (`.md` files dropped by code-review-graph directly into `~/.claude/skills/`) are exempt — skip files, only check directories
+- Flag: directories not in REGISTRY ("unregistered skill"), REGISTRY entries with no directory ("stale entry")
 
-Also verify `push-claude-config` PUBLIC_SKILLS list matches the README's "Published to claude-configs" section, and same for `push-qa-playbook` PUBLIC_QA_SKILLS.
+**Check 2 — SKILL.md name frontmatter:**
+- Skill `name:` frontmatter in each SKILL.md should match the directory name
+- Flag: mismatches
+
+Note: `claude-config-push` and `qa-playbook-push` no longer have their own hardcoded skill lists — they read from REGISTRY.yml directly. Do NOT check for list consistency in those files.
 
 ---
 
@@ -141,4 +148,5 @@ Use `mcp__mempalace__mempalace_diary_write` to log what was cleaned.
 - Don't flag things that are intentionally different (e.g., a `docs/` file that's a WIP the user just created)
 - When in doubt about whether something is a duplicate, ask rather than auto-flag
 - `settings.local.json` is never stale — it's machine-local by design
-- `~/.claude/skills/README.md` is a publish registry, not documentation — different purpose from skill SKILL.md files
+- `~/.claude/skills/REGISTRY.yml` is the single source of truth for publish targets — README.md and push skills derive from it
+- When adding a new skill: add it to REGISTRY.yml first, then update README.md to match

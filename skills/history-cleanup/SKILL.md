@@ -1,13 +1,13 @@
 ---
-name: cleanup-history
+name: history-cleanup
 description: >-
   Manual Claude Code history cleanup — shows what will be deleted, asks for
   confirmation, then cleans. Trims hook-approvals.log to 500 lines; removes
   .jsonl session logs older than 30 days; removes orphaned subagent dirs.
-  Trigger: "cleanup history", "почисти историю", "claude-cleanup", "прибраться в истории".
+  Trigger: "cleanup history", "почисти историю", "history-cleanup", "прибраться в истории".
 ---
 
-## Your task
+# history-cleanup — Claude Code Session History Cleanup
 
 Clean up Claude Code session history. Three phases: survey → confirm → clean.
 

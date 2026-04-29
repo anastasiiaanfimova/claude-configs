@@ -1,5 +1,5 @@
 ---
-name: setup-project
+name: workspace-setup
 description: >-
   One-time project setup — initialize MemPalace context, episodic-memory,
   code-review-graph, and project memory files. Run once per new project directory.
@@ -7,7 +7,7 @@ description: >-
   "первый запуск", "init project memory".
 ---
 
-## Your task
+# workspace-setup — One-Time Project Setup
 
 Run one-time setup for this project. Do all steps in order.
 

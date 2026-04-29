@@ -145,8 +145,8 @@ Superpowers установлен глобально (scope: user). По прав
 
 - `tc-create`, `tc-update`, `tc-gap` — создание/обновление тест-кейсов (<project> QA)
 - `bug-dig`, `bug-review`, `bug-nominate`, `bug-create`, `bug-comment` — bug workflow (<project> QA)
-- `cleanup-mac`, `cleanup-history`, `cleanup-claude` — системная чистка
-- `push-claude-config`, `push-qa-playbook`, `git-refresh` — git/config операции
+- `mac-cleanup`, `history-cleanup`, `claude-cleanup` — системная чистка
+- `claude-config-push`, `qa-playbook-push`, `git-refresh` — git/config операции
 
 ### Skill invocation — приоритет
 

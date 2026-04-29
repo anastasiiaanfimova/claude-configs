@@ -23,7 +23,7 @@ This setup layers four independent memory systems on top of Claude Code. Each so
 
 None of these overlap: MemPalace is about the agent knowing the user, episodic-memory is a searchable archive of raw conversation history, code-review-graph is about knowing the codebase, auto-memory is about in-project scratchpad facts.
 
-Since MemPalace captures everything important across sessions, raw `.jsonl` session logs are just disk clutter. Run `claude-cleanup` (a shell alias) manually whenever you want to prune logs older than 30 days. The `memory/` directory is always preserved.
+Since MemPalace captures everything important across sessions, raw `.jsonl` session logs are just disk clutter. Run `/history-cleanup` manually whenever you want to prune logs older than 30 days. The `memory/` directory is always preserved.
 
 ## What's inside
 
@@ -162,7 +162,7 @@ Two tiers of isolation:
 ~/MyProject/.mcp.json  → mempalace --palace ~/.myproject/mempalace
 ```
 
-The server is always named `mempalace` in each project, so hooks and tool permissions (`mcp__mempalace__*`) are identical everywhere. The `/setup-project` command automatically picks the right tier based on whether the current directory is inside `~/Claude/`.
+The server is always named `mempalace` in each project, so hooks and tool permissions (`mcp__mempalace__*`) are identical everywhere. The `/workspace-setup` command automatically picks the right tier based on whether the current directory is inside `~/Claude/`.
 
 If Claude is launched from any other directory, MemPalace is simply unavailable — by design.
 
@@ -194,6 +194,7 @@ Agents for managing the local Claude Code environment. Built-in agents from Clau
 | `docker-debugger` | Diagnoses Docker containers that crash, restart, or fail healthchecks. Knows the Infisical + Docker Compose patterns used in this setup. | sonnet |
 | `release-manager` | npm publish, GitHub releases, changelog, git tags. Configured for the npm publish workflow on macOS. | sonnet |
 | `mempalace-admin` | MemPalace maintenance — auditing palace contents, cleanup, KG health. | sonnet |
+| `security-auditor` | Audits REST API and web apps for security vulnerabilities — auth bypasses, broken access control, injection, insecure configs. QA-focused, not compliance auditing. | sonnet |
 
 > **QA agents** (test-architect, e2e-tester, bug-reporter, etc.) are published separately — see [qa-playbook](https://github.com/anastasiiaanfimova/qa-playbook).
 
@@ -211,7 +212,7 @@ Two files that extend the hook infrastructure.
 
 | File | What it does |
 |------|-------------|
-| `pre-commit` | Global git pre-commit hook — blocks private project names from leaking into public repos. Reads the scan pattern from `~/.claude/skills/push-claude-config/replacements.md` (SCAN: line). Runs only for public repos under `anastasiiaanfimova`. |
+| `pre-commit` | Global git pre-commit hook — blocks private project names from leaking into public repos. Reads the scan pattern from `~/.claude/skills/claude-config-push/replacements.md` (SCAN: line). Runs only for public repos under `anastasiiaanfimova`. |
 
 > **Local-only scripts** (not in this repo): [`statusline.sh`](https://github.com/anastasiiaanfimova/claude-statusline) — populates the status bar; `cleanup_history.sh` — manual history cleanup (invoked via `/cleanup-history` skill); `palace_detect.sh` — lives in `~/.mempalace/`, part of the MemPalace installation.
 
@@ -227,14 +228,13 @@ Skills differ from agents: agents are subprocesses dispatched for isolated subta
 
 | Skill | What it does |
 |---|---|
-| `cleanup-history` | Manual Claude Code history cleanup. Shows what will be deleted (log size, old session files), asks for confirmation, then runs. Use instead of the automatic Stop hook — run when you actually want to prune. |
-| `cleanup-claude` | Audit and clean up the Claude Code setup — find stale skill/agent references, duplicate sources of truth, unnecessary MCP wrappers, parasitic directories (`.cursor/`, `.agents/`), and mismatches in the skills publish registry. Updates the MemPalace architecture drawer at the end. |
-| `cleanup-mac` | macOS system cleanup — scans for artifacts from removed apps, stale configs, and old caches, then removes them. Three-phase flow: survey (read-only) → confirm → clean. Fully automated for safe operations; asks for anything non-obvious. |
-| `find-skills` | Discover and install agent skills. Use when you're looking for functionality that might exist as an installable skill — searches the open agent skills ecosystem and guides installation. |
-| `setup-project` | One-time project initialization. Configures `.mcp.json` and `.claude/settings.local.json` for MemPalace + episodic-memory, creates project memory files, checks code-review-graph, adds the project to the KG, and writes a diary entry. Automatically picks the right palace strategy: shared palace for sub-projects inside `~/Claude/`, isolated palace for top-level projects. |
+| `history-cleanup` | Manual Claude Code history cleanup. Shows what will be deleted (log size, old session files), asks for confirmation, then runs. Use instead of the automatic Stop hook — run when you actually want to prune. |
+| `claude-cleanup` | Audit and clean up the Claude Code setup — find stale skill/agent references, duplicate sources of truth, unnecessary MCP wrappers, parasitic directories (`.cursor/`, `.agents/`), and mismatches in the skills publish registry. Updates the MemPalace architecture drawer at the end. |
+| `mac-cleanup` | macOS system cleanup — scans for artifacts from removed apps, stale configs, and old caches, then removes them. Three-phase flow: survey (read-only) → confirm → clean. Fully automated for safe operations; asks for anything non-obvious. |
+| `workspace-setup` | One-time project initialization. Configures `.mcp.json` and `.claude/settings.local.json` for MemPalace + episodic-memory, creates project memory files, checks code-review-graph, adds the project to the KG, and writes a diary entry. Automatically picks the right palace strategy: shared palace for sub-projects inside `~/Claude/`, isolated palace for top-level projects. |
 | `claude-tooling` | Cross-project Claude tooling audit. Reads MemPalace across all project wings + diary, searches the web for new Claude Code / Anthropic updates, compares against an existing `IMPROVEMENTS.md` in a GitHub repo, and pushes an updated file with status tracking (🔄 pending / ✅ done / 🆕 new / 📡 new in Claude). Fully autonomous — auto-commits and pushes. No user input needed. |
-| `push-claude-config` | Syncs `~/.claude/` files to this GitHub repo. Diffs local vs repo, anonymizes private project names, commits only changed files. Handles CLAUDE.md, settings.json, all agents, and public skills. Updates README if content changed. |
-| `update-tooling` | Updates all Claude MCP servers and plugins to their latest versions — MemPalace, code-review-graph, episodic-memory, notebooklm-mcp, and Claude plugins. Shows a before/after version table. Fully autonomous. |
+| `claude-config-push` | Syncs `~/.claude/` files to this GitHub repo. Diffs local vs repo, anonymizes private project names, commits only changed files. Handles CLAUDE.md, settings.json, all agents, and public skills. Updates README if content changed. |
+| `tooling-update` | Updates all Claude MCP servers and plugins to their latest versions — MemPalace, code-review-graph, episodic-memory, notebooklm-mcp, and Claude plugins. Shows a before/after version table. Fully autonomous. |
 
 > **QA skills and agents** (tc-create, tc-gap, bug-dig, etc.) are published separately — see [qa-playbook](https://github.com/anastasiiaanfimova/qa-playbook).
 
@@ -245,12 +245,12 @@ Skills differ from agents: agents are subprocesses dispatched for isolated subta
 cp agents/bug-reporter.md ~/.claude/agents/
 ```
 
-**`/setup-project` skill** — copy to `~/.claude/skills/setup-project/`:
+**`/workspace-setup` skill** — copy to `~/.claude/skills/workspace-setup/`:
 ```bash
-mkdir -p ~/.claude/skills/setup-project
-cp skills/setup-project/SKILL.md ~/.claude/skills/setup-project/
+mkdir -p ~/.claude/skills/workspace-setup
+cp skills/workspace-setup/SKILL.md ~/.claude/skills/workspace-setup/
 ```
-Then run `/setup-project` from any new project directory.
+Then run `/workspace-setup` from any new project directory.
 
 Copy what's useful, adjust paths to your setup. [Claude Code hooks docs](https://docs.anthropic.com/en/docs/claude-code/hooks)
 
@@ -264,10 +264,10 @@ chmod +x ~/.git-hooks/pre-commit
 git config --global core.hooksPath ~/.git-hooks
 ```
 
-The hook reads its scan pattern from `~/.claude/skills/push-claude-config/replacements.md` (the `SCAN:` line) automatically — no separate config file needed. If you use this hook without push-config, create `~/.git-hooks/pre-commit.local` with a `FORBIDDEN` array instead:
+The hook reads its scan pattern from `~/.claude/skills/claude-config-push/replacements.md` (the `SCAN:` line) automatically — no separate config file needed. If you use this hook without push-config, create `~/.git-hooks/pre-commit.local` with a `FORBIDDEN` array instead:
 
 ```bash
 FORBIDDEN=(myproject internal-service vault-name)
 ```
 
-The `.local` file takes priority over `replacements.md` and is gitignored. The `/push-claude-config` skill also runs this hook explicitly before each commit.
+The `.local` file takes priority over `replacements.md` and is gitignored. The `/claude-config-push` skill also runs this hook explicitly before each commit.

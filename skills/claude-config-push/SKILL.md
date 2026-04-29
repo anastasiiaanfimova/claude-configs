@@ -1,10 +1,10 @@
 ---
-name: push-claude-config
+name: claude-config-push
 description: >-
   Sync local ~/.claude/ files to github.com/anastasiiaanfimova/claude-configs,
   anonymizing private project names before push. Compares local vs repo,
   shows diffs, commits only changed files. Fully automatic.
-  Trigger: "push-claude-config", "обнови claude-configs", "запуши конфиги",
+  Trigger: "claude-config-push", "обнови claude-configs", "запуши конфиги",
   "sync configs", "пуш конфигов".
 ---
 
@@ -32,19 +32,8 @@ Local:  /tmp/claude-configs
 | `~/.claude/agents/*.md` | `agents/` |
 | `~/.claude/skills/<name>/SKILL.md` | `skills/<name>/SKILL.md` |
 
-**Skills** — only the ones in PUBLIC_SKILLS are synced (others may contain private project references):
-```
-PUBLIC_SKILLS = [
-  claude-tooling
-  push-claude-config
-  setup-project
-  cleanup-history
-  cleanup-claude
-  cleanup-mac
-  find-skills
-  update-tooling
-]
-```
+**Skills** — only those listed under `claude-configs:` in `~/.claude/skills/REGISTRY.yml` are synced (others may contain private project references). `REGISTRY.yml` is the single source of truth — do not maintain a list here.
+
 Each skill is synced as `skills/<name>/SKILL.md`.
 
 ### Anonymization
@@ -52,7 +41,7 @@ Each skill is synced as `skills/<name>/SKILL.md`.
 Replacement rules and the privacy-scan pattern live in a **local-only** file (never synced):
 
 ```
-~/.claude/skills/push-claude-config/replacements.md
+~/.claude/skills/claude-config-push/replacements.md
 ```
 
 To add a new private project name, append a line:
@@ -85,7 +74,8 @@ Use this Python one-liner for each file. Run it as a function — apply to every
 # anon.py — reads patterns from local docs/replacements.md, applies to stdin
 import sys, re, os
 
-repl_file = os.path.expanduser('~/.claude/skills/push-claude-config/replacements.md')
+skill_dir = os.path.expanduser('~/.claude/skills/claude-config-push')
+repl_file = os.path.join(skill_dir, 'replacements.md')
 replacements = []
 with open(repl_file) as f:
     for line in f:
@@ -116,15 +106,53 @@ diff /tmp/claude_anon.md /tmp/claude-configs/CLAUDE.md
 cp /tmp/claude_anon.md /tmp/claude-configs/CLAUDE.md
 ```
 
-For **agents/**: loop over all `~/.claude/agents/*.md`, anonymize each, compare with repo file, copy if changed. Also check for **new files** (in local but not in repo) and **deleted files** (in repo but not in local) — add or remove accordingly.
-
-For **skills** — read PUBLIC_SKILLS from Config above and build the array using this template (substitute the names from Config, space-separated):
+For **agents** — read `~/.claude/skills/REGISTRY.yml`, extract `claude-configs-agents:` section, build an array and sync only those:
 
 ```bash
-PUBLIC_SKILLS=(<names from Config>)
+PUBLIC_AGENTS=($(python3 -c "
+import yaml, sys
+with open(sys.argv[1]) as f: reg = yaml.safe_load(f)
+print(' '.join(reg.get('claude-configs-agents', [])))
+" ~/.claude/skills/REGISTRY.yml))
+
+for name in "${PUBLIC_AGENTS[@]}"; do
+  src="$HOME/.claude/agents/$name.md"
+  dest="/tmp/claude-configs/agents/$name.md"
+  [ -f "$src" ] || { echo "WARNING: $src not found, skipping"; continue; }
+  mkdir -p "$(dirname "$dest")"
+  python3 /tmp/anon.py < "$src" > /tmp/agent_anon.md
+  if [ ! -f "$dest" ]; then
+    cp /tmp/agent_anon.md "$dest"
+    echo "NEW: $name"
+  elif ! diff -q /tmp/agent_anon.md "$dest" > /dev/null 2>&1; then
+    cp /tmp/agent_anon.md "$dest"
+    echo "CHANGED: $name"
+  fi
+done
+
+# Remove stale agents from repo
+for f in /tmp/claude-configs/agents/*.md; do
+  agent_name=$(basename "$f" .md)
+  found=0
+  for a in "${PUBLIC_AGENTS[@]}"; do [ "$a" = "$agent_name" ] && found=1 && break; done
+  if [ $found -eq 0 ]; then
+    git -C /tmp/claude-configs rm "agents/$agent_name.md"
+    echo "DELETED stale agent from repo: $agent_name"
+  fi
+done
+```
+
+For **skills** — read `~/.claude/skills/REGISTRY.yml`, extract all skill names under the `claude-configs:` section, and build an array:
+
+```bash
+PUBLIC_SKILLS=($(python3 -c "
+import yaml, sys
+with open(sys.argv[1]) as f: reg = yaml.safe_load(f)
+print(' '.join(reg.get('claude-configs', [])))
+" ~/.claude/skills/REGISTRY.yml))
 
 for name in "${PUBLIC_SKILLS[@]}"; do
-  src="/Users/<user>/.claude/skills/$name/SKILL.md"
+  src="$HOME/.claude/skills/$name/SKILL.md"
   dest="/tmp/claude-configs/skills/$name/SKILL.md"
   [ -f "$src" ] || { echo "WARNING: $src not found, skipping"; continue; }
   mkdir -p "$(dirname "$dest")"
@@ -160,7 +188,8 @@ done
 Before staging anything, scan all repo files for private names that should have been anonymized:
 
 ```bash
-REPL_FILE="$HOME/.claude/skills/push-claude-config/replacements.md"
+SKILL_DIR="$HOME/.claude/skills/claude-config-push"
+REPL_FILE="$SKILL_DIR/replacements.md"
 SCAN_PATTERN=$(grep "^SCAN:" "$REPL_FILE" | sed 's/^SCAN: *//')
 
 LEAKS=$(grep -rn "$SCAN_PATTERN" /tmp/claude-configs/ \
@@ -278,4 +307,5 @@ git -C /tmp/claude-configs log --oneline -1
 - **Pre-commit hook** (`hooks/pre-commit`) reads the scan pattern from `replacements.md` (SCAN: line) automatically — no manual sync needed. Override via `~/.git-hooks/pre-commit.local` (FORBIDDEN array) if needed; gitignored. The hook is run explicitly in Step 5 before every commit.
 - `settings.local.json` is **never** synced — it's machine-local (paths, personal tokens).
 - Project-scoped agents (e.g. in `~/Hermes/.claude/agents/`) are never synced here — only `~/.claude/agents/`.
-- To add a skill: update **PUBLIC_SKILLS** in Config above — that's the only place to edit. Step 2 reads the list from there at runtime.
+- To add a skill: add it to the `claude-configs:` section in `~/.claude/skills/REGISTRY.yml` — that's the only place to edit. Step 2 reads the list from there at runtime.
+- To add an agent: add it to the `claude-configs-agents:` section in `~/.claude/skills/REGISTRY.yml` — same rule.

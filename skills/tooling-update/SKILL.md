@@ -1,9 +1,9 @@
 ---
-name: update-tooling
+name: tooling-update
 description: Update all Claude-related tools to their latest versions — MemPalace, code-review-graph, episodic-memory, notebooklm-mcp, and Claude plugins (superpowers, warp). Use this skill whenever the user says "update tools", "обнови тулы", "обнови клода", "check for updates", "update mcp", "update plugins", or asks to update any Claude MCP server, plugin, or related tool.
 ---
 
-# update-tooling
+# tooling-update
 
 Updates all Claude MCP servers and plugins to their latest versions. Fully autonomous — runs without user input.
 
