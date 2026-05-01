@@ -264,10 +264,16 @@ chmod +x ~/.git-hooks/pre-commit
 git config --global core.hooksPath ~/.git-hooks
 ```
 
-The hook reads its deny list from `~/.claude/lib/push-mirror/forbidden.txt` (one pattern per line) automatically — no separate config file needed. If you use this hook without push-mirror infrastructure, create `~/.git-hooks/pre-commit.local` with a `FORBIDDEN` array instead:
+The hook reads its deny list from a single source: `~/.claude/lib/push-mirror/forbidden.txt` (one regex pattern per line; comments allowed). If the file doesn't exist, the hook silently exits — so you must create it before this hook protects anything:
 
 ```bash
-FORBIDDEN=(myproject internal-service vault-name)
+mkdir -p ~/.claude/lib/push-mirror
+cat > ~/.claude/lib/push-mirror/forbidden.txt <<'EOF'
+# One pattern per line. Case-insensitive (hook uses grep -iE).
+myproject
+internal-service
+vault-name
+EOF
 ```
 
-The `.local` file takes priority over `forbidden.txt` and is gitignored. The `/claude-config-push` skill also runs this hook explicitly before each commit.
+To add or remove a forbidden word later, just edit `forbidden.txt` directly. The `/claude-config-push` skill also runs this hook explicitly before each commit.

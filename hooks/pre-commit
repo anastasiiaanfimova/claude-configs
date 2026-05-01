@@ -1,32 +1,23 @@
 #!/bin/bash
 # Global pre-commit hook — blocks private project/service names from leaking into public repos.
-# Install globally so it runs for every git repo on the machine:
 #
+# Install:
 #   cp hooks/pre-commit ~/.git-hooks/pre-commit
 #   chmod +x ~/.git-hooks/pre-commit
 #   git config --global core.hooksPath ~/.git-hooks
 #
-# Pattern source (in priority order):
-#   1. ~/.git-hooks/pre-commit.local — FORBIDDEN=(word1 word2) bash array (override)
-#   2. ~/.claude/skills/push-config/replacements.md — SCAN: line (default)
+# Single source of truth for the deny list:
+#   ~/.claude/lib/push-mirror/forbidden.txt — one regex pattern per line.
+#   Comments (#) and empty lines are ignored.
 #
-# The .local file is never committed and is only needed if you don't use push-config.
+# To add a temporary or permanent forbidden word: edit forbidden.txt directly.
 
 # --- Load scan pattern ---
-REPL_FILE="$HOME/.claude/skills/push-config/replacements.md"
-LOCAL_FILE="$(dirname "$0")/pre-commit.local"
+FORBIDDEN_FILE="$HOME/.claude/lib/push-mirror/forbidden.txt"
 
-PATTERN=""
-if [ -f "$LOCAL_FILE" ]; then
-  FORBIDDEN=()
-  source "$LOCAL_FILE"
-  [ ${#FORBIDDEN[@]} -gt 0 ] && PATTERN=$(IFS='|'; echo "${FORBIDDEN[*]}")
-fi
+[ -f "$FORBIDDEN_FILE" ] || exit 0
 
-if [ -z "$PATTERN" ] && [ -f "$REPL_FILE" ]; then
-  PATTERN=$(grep "^SCAN:" "$REPL_FILE" | sed 's/^SCAN: *//' | sed 's/\\|/|/g')
-fi
-
+PATTERN=$(grep -vE '^\s*(#|$)' "$FORBIDDEN_FILE" | paste -sd '|' -)
 [ -z "$PATTERN" ] && exit 0
 
 # --- Config ---
