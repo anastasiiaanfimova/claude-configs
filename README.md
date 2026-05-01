@@ -212,7 +212,7 @@ Two files that extend the hook infrastructure.
 
 | File | What it does |
 |------|-------------|
-| `pre-commit` | Global git pre-commit hook — blocks private project names from leaking into public repos. Reads the scan pattern from `~/.claude/skills/claude-config-push/replacements.md` (SCAN: line). Runs only for public repos under `anastasiiaanfimova`. |
+| `pre-commit` | Global git pre-commit hook — blocks private project names from leaking into public repos. Reads the deny list from `~/.claude/lib/push-mirror/forbidden.txt` (one pattern per line). Runs only for public repos under `anastasiiaanfimova`. |
 
 > **Local-only scripts** (not in this repo): [`statusline.sh`](https://github.com/anastasiiaanfimova/claude-statusline) — populates the status bar; `cleanup_history.sh` — manual history cleanup (invoked via `/cleanup-history` skill); `palace_detect.sh` — lives in `~/.mempalace/`, part of the MemPalace installation.
 
@@ -232,7 +232,7 @@ Skills differ from agents: agents are subprocesses dispatched for isolated subta
 | `claude-cleanup` | Audit and clean up the Claude Code setup — find stale skill/agent references, duplicate sources of truth, unnecessary MCP wrappers, parasitic directories (`.cursor/`, `.agents/`), and mismatches in the skills publish registry. Updates the MemPalace architecture drawer at the end. |
 | `mac-cleanup` | macOS system cleanup — scans for artifacts from removed apps, stale configs, and old caches, then removes them. Three-phase flow: survey (read-only) → confirm → clean. Fully automated for safe operations; asks for anything non-obvious. |
 | `workspace-setup` | One-time project initialization. Configures `.mcp.json` and `.claude/settings.local.json` for MemPalace + episodic-memory, creates project memory files, checks code-review-graph, adds the project to the KG, and writes a diary entry. Automatically picks the right palace strategy: shared palace for sub-projects inside `~/Claude/`, isolated palace for top-level projects. |
-| `claude-tooling` | Cross-project Claude tooling audit. Reads MemPalace across all project wings + diary, searches the web for new Claude Code / Anthropic updates, compares against an existing `IMPROVEMENTS.md` in a GitHub repo, and pushes an updated file with status tracking (🔄 pending / ✅ done / 🆕 new / 📡 new in Claude). Fully autonomous — auto-commits and pushes. No user input needed. |
+| `claude-audit` | Cross-project Claude tooling audit. Reads MemPalace across all project wings + diary, searches the web for new Claude Code / Anthropic updates, compares against an existing local `IMPROVEMENTS.md`, and writes the updated file with status tracking. Fully automatic — no user input needed. |
 | `claude-config-push` | Syncs `~/.claude/` files to this GitHub repo. Diffs local vs repo, anonymizes private project names, commits only changed files. Handles CLAUDE.md, settings.json, all agents, and public skills. Updates README if content changed. |
 | `tooling-update` | Updates all Claude MCP servers and plugins to their latest versions — MemPalace, code-review-graph, episodic-memory, notebooklm-mcp, and Claude plugins. Shows a before/after version table. Fully autonomous. |
 
@@ -264,10 +264,10 @@ chmod +x ~/.git-hooks/pre-commit
 git config --global core.hooksPath ~/.git-hooks
 ```
 
-The hook reads its scan pattern from `~/.claude/skills/claude-config-push/replacements.md` (the `SCAN:` line) automatically — no separate config file needed. If you use this hook without push-config, create `~/.git-hooks/pre-commit.local` with a `FORBIDDEN` array instead:
+The hook reads its deny list from `~/.claude/lib/push-mirror/forbidden.txt` (one pattern per line) automatically — no separate config file needed. If you use this hook without push-mirror infrastructure, create `~/.git-hooks/pre-commit.local` with a `FORBIDDEN` array instead:
 
 ```bash
 FORBIDDEN=(myproject internal-service vault-name)
 ```
 
-The `.local` file takes priority over `replacements.md` and is gitignored. The `/claude-config-push` skill also runs this hook explicitly before each commit.
+The `.local` file takes priority over `forbidden.txt` and is gitignored. The `/claude-config-push` skill also runs this hook explicitly before each commit.

@@ -1,11 +1,11 @@
 ---
-name: claude-tooling
+name: claude-audit
 description: >-
   Cross-project Claude tooling audit. Reads MemPalace (all wings) + diary,
   searches for new Claude Code / Anthropic updates via web, compares against
   existing local IMPROVEMENTS.md, and writes updated file with status tracking.
   Fully automatic — no user input needed.
-  Trigger: "claude-tooling", "что улучшить в Claude", "аудит клода",
+  Trigger: "claude-audit", "что улучшить в Claude", "аудит клода",
   "новое в Claude Code", "обнови improvements".
 ---
 
@@ -156,7 +156,7 @@ Confirm: print "Written to ~/Claude/digests/IMPROVEMENTS.md".
 - Date range analysed
 - Count of new suggestions / updated pending / new Claude features found
 
-Topic: `claude-tooling`
+Topic: `claude-audit`
 
 ---
 

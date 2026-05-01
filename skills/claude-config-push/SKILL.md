@@ -10,235 +10,80 @@ description: >-
 
 # Sync Claude Configs
 
-Diffs local `~/.claude/` files against the GitHub repo, anonymizes private data,
-commits changed files, and pushes.
+Diffs local `~/.claude/` files against the GitHub repo, anonymizes private
+data, commits changed files, and pushes.
 
-## Config
+The deterministic part (clone/pull, anonymize, diff, copy, stale-removal,
+privacy scan, commit, push) lives in shared scripts under
+`~/.claude/lib/push-mirror/`. This skill orchestrates them and handles the
+parts that need human judgement (review, README update, diary).
 
-### Repo
-```
-Owner:  anastasiiaanfimova
-Repo:   claude-configs
-Branch: main
-Local:  /tmp/claude-configs
-```
-
-### Files to sync
-
-| Local source | Repo path |
-|---|---|
-| `~/.claude/CLAUDE.md` | `CLAUDE.md` |
-| `~/.claude/settings.json` | `settings/settings.json` |
-| `~/.claude/agents/*.md` | `agents/` |
-| `~/.claude/skills/<name>/SKILL.md` | `skills/<name>/SKILL.md` |
-
-**Skills** — only those listed under `claude-configs:` in `~/.claude/skills/REGISTRY.yml` are synced (others may contain private project references). `REGISTRY.yml` is the single source of truth — do not maintain a list here.
-
-Each skill is synced as `skills/<name>/SKILL.md`.
-
-### Anonymization
-
-Replacement rules and the privacy-scan pattern live in a **local-only** file (never synced):
+## Constants
 
 ```
-~/.claude/skills/claude-config-push/replacements.md
+TARGET           = claude-configs
+PUSH_MIRROR_DIR  = ~/.claude/lib/push-mirror
+PUSH_MIRROR_SH   = ~/.claude/lib/push-mirror/push-mirror.sh
+COMMIT_PUSH_SH   = ~/.claude/lib/push-mirror/commit-and-push.sh
+REPO_LOCAL       = /tmp/claude-configs
+REPO_URL         = https://github.com/anastasiiaanfimova/claude-configs
+DIARY_WING       = wing_claude
+DIARY_TOPIC      = claude-configs.sync
 ```
 
-To add a new private project name, append a line:
-```
-(?i)newproject → <project>
-```
-Then update the `SCAN:` line at the bottom of that file to include it.
-
-**Never anonymize:** `hermes`, `claude`, `mempalace`, `anastasiiaanfimova` (GitHub owner).
-
----
+Target sources, registry sections, anonymization toggles, and extra files
+are declared in `$PUSH_MIRROR_DIR/configs/claude-configs.sh` — single source
+of truth, do not duplicate here.
 
 ## Workflow
 
-### Step 0 — Clone or pull the repo
+### Step 1 — Run the sync script
 
 ```bash
-if [ -d /tmp/claude-configs/.git ]; then
-  git -C /tmp/claude-configs pull --rebase --quiet
-else
-  git clone https://github.com/anastasiiaanfimova/claude-configs /tmp/claude-configs
-fi
+~/.claude/lib/push-mirror/push-mirror.sh --target claude-configs
 ```
 
-### Step 1 — Build anonymization function
+The script:
+- clones or pulls `$REPO_LOCAL` (skips pull if local has uncommitted changes from a previous run)
+- reads `~/.claude/skills/REGISTRY.yml` — sections `claude-configs` (skills) and `claude-configs-agents` (agents)
+- anonymizes via `anon.py` using `replacements/claude-configs.md`
+- copies extra files (`CLAUDE.md`, `settings/settings.json`) from the config
+- copies skills as `skills/<name>/SKILL.md`
+- copies agents as `agents/<name>.md` (anonymized — `ANONYMIZE_AGENTS=true` for this target)
+- removes stale skills/agents from the repo (anything in repo but not in registry)
+- runs the privacy scan against `forbidden.txt` — exits 1 if any forbidden pattern is found
 
-Use this Python one-liner for each file. Run it as a function — apply to every file before diffing:
+**If the script exits non-zero** (privacy leak, missing config, etc.) — stop. Read the error, fix `replacements/claude-configs.md` (add missing rule) or `forbidden.txt`, re-run.
 
-```python
-# anon.py — reads patterns from local docs/replacements.md, applies to stdin
-import sys, re, os
+**If the script prints "claude-configs is up to date — nothing to commit"** — stop. No commit, no diary.
 
-skill_dir = os.path.expanduser('~/.claude/skills/claude-config-push')
-repl_file = os.path.join(skill_dir, 'replacements.md')
-replacements = []
-with open(repl_file) as f:
-    for line in f:
-        line = line.strip()
-        if not line or line.startswith('#') or line.startswith('SCAN:'):
-            continue
-        if ' → ' in line:
-            pat, rep = line.split(' → ', 1)
-            replacements.append((pat.strip(), rep.strip()))
+### Step 2 — Review changes with the user
 
-text = sys.stdin.read()
-for pat, rep in replacements:
-    text = re.sub(pat, rep, text)
-print(text, end='')
-```
-
-Save to `/tmp/anon.py` once at the start of the skill run.
-
-### Step 2 — Diff and copy each file
-
-For each file pair (local → repo):
-
-```bash
-# Example for CLAUDE.md:
-python3 /tmp/anon.py < ~/.claude/CLAUDE.md > /tmp/claude_anon.md
-diff /tmp/claude_anon.md /tmp/claude-configs/CLAUDE.md
-# If diff is non-empty → copy:
-cp /tmp/claude_anon.md /tmp/claude-configs/CLAUDE.md
-```
-
-For **agents** — read `~/.claude/skills/REGISTRY.yml`, extract `claude-configs-agents:` section, build an array and sync only those:
-
-```bash
-PUBLIC_AGENTS=($(python3 -c "
-import yaml, sys
-with open(sys.argv[1]) as f: reg = yaml.safe_load(f)
-print(' '.join(reg.get('claude-configs-agents', [])))
-" ~/.claude/skills/REGISTRY.yml))
-
-for name in "${PUBLIC_AGENTS[@]}"; do
-  src="$HOME/.claude/agents/$name.md"
-  dest="/tmp/claude-configs/agents/$name.md"
-  [ -f "$src" ] || { echo "WARNING: $src not found, skipping"; continue; }
-  mkdir -p "$(dirname "$dest")"
-  python3 /tmp/anon.py < "$src" > /tmp/agent_anon.md
-  if [ ! -f "$dest" ]; then
-    cp /tmp/agent_anon.md "$dest"
-    echo "NEW: $name"
-  elif ! diff -q /tmp/agent_anon.md "$dest" > /dev/null 2>&1; then
-    cp /tmp/agent_anon.md "$dest"
-    echo "CHANGED: $name"
-  fi
-done
-
-# Remove stale agents from repo
-for f in /tmp/claude-configs/agents/*.md; do
-  agent_name=$(basename "$f" .md)
-  found=0
-  for a in "${PUBLIC_AGENTS[@]}"; do [ "$a" = "$agent_name" ] && found=1 && break; done
-  if [ $found -eq 0 ]; then
-    git -C /tmp/claude-configs rm "agents/$agent_name.md"
-    echo "DELETED stale agent from repo: $agent_name"
-  fi
-done
-```
-
-For **skills** — read `~/.claude/skills/REGISTRY.yml`, extract all skill names under the `claude-configs:` section, and build an array:
-
-```bash
-PUBLIC_SKILLS=($(python3 -c "
-import yaml, sys
-with open(sys.argv[1]) as f: reg = yaml.safe_load(f)
-print(' '.join(reg.get('claude-configs', [])))
-" ~/.claude/skills/REGISTRY.yml))
-
-for name in "${PUBLIC_SKILLS[@]}"; do
-  src="$HOME/.claude/skills/$name/SKILL.md"
-  dest="/tmp/claude-configs/skills/$name/SKILL.md"
-  [ -f "$src" ] || { echo "WARNING: $src not found, skipping"; continue; }
-  mkdir -p "$(dirname "$dest")"
-  python3 /tmp/anon.py < "$src" > /tmp/skill_anon.md
-  if [ ! -f "$dest" ]; then
-    cp /tmp/skill_anon.md "$dest"
-    echo "NEW: $name"
-  elif ! diff -q /tmp/skill_anon.md "$dest" > /dev/null 2>&1; then
-    cp /tmp/skill_anon.md "$dest"
-    echo "CHANGED: $name"
-  fi
-done
-```
-
-### Step 2b — Remove stale skills from repo
-
-Delete any skill dir in `/tmp/claude-configs/skills/` whose name is **not** in PUBLIC_SKILLS (reuse `$PUBLIC_SKILLS` array from Step 2):
-
-```bash
-for dir in /tmp/claude-configs/skills/*/; do
-  skill_name=$(basename "$dir")
-  found=0
-  for s in "${PUBLIC_SKILLS[@]}"; do [ "$s" = "$skill_name" ] && found=1 && break; done
-  if [ $found -eq 0 ]; then
-    git -C /tmp/claude-configs rm -r "skills/$skill_name"
-    echo "DELETED stale skill from repo: $skill_name"
-  fi
-done
-```
-
-### Step 2c — Privacy scan
-
-Before staging anything, scan all repo files for private names that should have been anonymized:
-
-```bash
-SKILL_DIR="$HOME/.claude/skills/claude-config-push"
-REPL_FILE="$SKILL_DIR/replacements.md"
-SCAN_PATTERN=$(grep "^SCAN:" "$REPL_FILE" | sed 's/^SCAN: *//')
-
-LEAKS=$(grep -rn "$SCAN_PATTERN" /tmp/claude-configs/ \
-  --include="*.md" --include="*.json" --include="*.py" --include="*.sh" \
-  2>/dev/null | grep -v ".git" | grep -v "anastasiiaanfimova")
-
-if [ -n "$LEAKS" ]; then
-  echo "PRIVACY LEAK DETECTED — aborting push:"
-  echo "$LEAKS"
-  echo "Fix replacements.md patterns and re-run."
-  exit 1
-fi
-echo "Privacy scan: clean"
-```
-
-If any leaks are found → **stop immediately**, do not commit. Report which file and line contains the leak.
-
-### Step 3 — Review and confirm
-
+Read git status:
 ```bash
 git -C /tmp/claude-configs status --short
 ```
 
-If output is empty → print "claude-configs is up to date, nothing to push." and stop (no commit, no diary).
-
-If changes exist → show the user what will be committed:
+Show the user what will be committed:
 - List all changed files (`M` = modified, `A` = new, `D` = deleted)
-- For each modified file show a compact diff (`git diff` for unstaged, the actual content delta)
-- If any file was deleted from repo (e.g. stale skill) — call it out explicitly
+- For each modified file show a compact diff (the actual content delta)
+- Call out deletions explicitly (e.g. "stale skill X removed")
 
-**Then ask:** "Всё выглядит хорошо? Коммитить и пушить?" — and wait for confirmation before proceeding.
+**Then ask:** "Всё выглядит хорошо? Коммитить и пушить?" — wait for confirmation before Step 3.
 
-If the user has questions or wants to adjust anything — discuss and resolve before moving to Step 4.
-
-### Step 4 — Update README.md (mandatory, before commit)
+### Step 3 — Update README.md (mandatory, before commit)
 
 **Always run this step** — even if README.md itself wasn't in the diff. Any config change may make README stale.
 
-Read `/tmp/claude-configs/README.md` and verify these sections match the current local state:
+Read `/tmp/claude-configs/README.md` and verify:
 
-- **Hooks** (`settings.json` changed): hook names, count, sync/async notes — must match actual hooks in `settings.json`
-- **Memory stack** (any change): tool names, descriptions — must match tools actually configured
-- **Credentials / vault** (`CLAUDE.md` changed): vault names, workflow still accurate
+- **Hooks section** (`settings.json` changed): hook names, count, sync/async notes — must match actual hooks in the new `settings.json`
+- **Memory stack section** (any change): tool names, descriptions — must match tools actually configured
+- **Credentials / vault section** (`CLAUDE.md` changed): vault names, workflow still accurate
 
 **Completeness check — run for every directory (always, not just when that dir changed):**
 
-For each directory below, cross-check repo contents vs README entries. Add missing rows, remove stale rows.
-
-| Repo dir | README section to check | Row key | How to write a new row |
+| Repo dir | README section | Row key | How to write a new row |
 |---|---|---|---|
 | `agents/` | `### \`agents/\`` tables | filename without `.md` | read agent file for description + model |
 | `skills/` | `### \`skills/\`` tables | dir name | read `SKILL.md` description field |
@@ -246,66 +91,49 @@ For each directory below, cross-check repo contents vs README entries. Add missi
 | `hooks/` | `### \`hooks/\`` table | filename | read file header comment for purpose |
 
 Rules:
-- **File in repo but no row in README** → add the row
-- **Row in README but no file in repo** → remove the row
-- **File content changed** → verify the row description still matches
+- File in repo but no row in README → add the row
+- Row in README but no file in repo → remove the row
+- File content changed → verify the row description still matches
 
-**Link rule — real links only.** Every tool or product mentioned in README must have a working URL. When adding or editing a mention:
-1. Check if the tool already has a link in README — if yes, keep it
-2. If no link exists: find the real one (GitHub repo, docs page, npm package) before writing
-3. Never use placeholder links like `#`, `(link)`, or invented URLs
-4. Format: `[Tool Name](https://real.url)` inline in the text or table cell
+**Link rule — real links only.** Every tool or product mentioned must have a working URL.
+1. If the tool already has a link in README — keep it
+2. If no link exists: find the real one (GitHub, docs, npm) before writing
+3. Never use placeholders like `#`, `(link)`, or invented URLs
+4. Format: `[Tool Name](https://real.url)`
 
 Known real links for this setup:
-- MemPalace → check current link in README (maintained there)
-- code-review-graph → check current link in README
-- Superpowers → check current link in README
-- episodic-memory → find via `npm info episodic-memory` or `pip show episodic-memory` or search GitHub before adding
-- Claude Code hooks docs → `https://docs.anthropic.com/en/docs/claude-code/hooks`
-- Infisical → `https://infisical.com`
+- MemPalace, code-review-graph, Superpowers — check current link in README (maintained there)
+- episodic-memory — find via `npm info episodic-memory` or `pip show` or GitHub before adding
+- Claude Code hooks docs — `https://docs.anthropic.com/en/docs/claude-code/hooks`
+- Infisical — `https://infisical.com`
 
-Edit `/tmp/claude-configs/README.md` directly for any outdated sections. The README update is part of the same commit as the config changes — not a follow-up.
+Edit `/tmp/claude-configs/README.md` directly. README update is part of the same commit, not a follow-up.
 
-### Step 5 — Commit and push
-
-Run the pre-commit hook explicitly with local forbidden words before committing:
+### Step 4 — Commit and push
 
 ```bash
-cd /tmp/claude-configs
-git add -A
-
-# Run pre-commit hook with local FORBIDDEN list
-HOOK="$HOME/.git-hooks/pre-commit"
-if [ -f "$HOOK" ]; then
-  bash "$HOOK" || { echo "Pre-commit hook blocked the commit. Fix leaks and re-run."; exit 1; }
-fi
-
-CHANGED_FILES=$(git diff --cached --name-only | tr '\n' ' ')
-git commit -m "sync configs $(date +%Y-%m-%d): $CHANGED_FILES"
-
-git push origin main
+~/.claude/lib/push-mirror/commit-and-push.sh --target claude-configs
 ```
 
-Print the commit hash:
-```bash
-git -C /tmp/claude-configs log --oneline -1
-```
+The script stages all changes, runs the global pre-commit hook explicitly (catches any leak that slipped past replacements), commits with `sync claude-configs YYYY-MM-DD: <files>`, pushes to `main`, and prints the new commit hash.
 
-### Step 6 — Write diary entry
+If the pre-commit hook blocks → fix the leak in `replacements/claude-configs.md` and re-run from Step 1.
 
-`mcp__mempalace__mempalace_diary_write` with compact AAAK entry:
+### Step 5 — Diary entry
+
+`mempalace_diary_write` with:
 - `agent_name`: `"claude"`
-- `wing`: `"wing_claude"`
-- `topic`: `"claude-configs.sync"`
-- `entry`: include — which files changed, commit hash, anonymizations applied (e.g. "replaced <project>×3"), whether README was updated
+- `wing`: `wing_claude`
+- `topic`: `claude-configs.sync`
+- `entry`: AAAK — files changed, commit hash, anonymizations applied (e.g. "replaced <project>×3"), whether README was updated
 
 ---
 
 ## Notes
 
-- **Always anonymize before diffing** — even if the file looks clean, run it through anon.py.
-- **Pre-commit hook** (`hooks/pre-commit`) reads the scan pattern from `replacements.md` (SCAN: line) automatically — no manual sync needed. Override via `~/.git-hooks/pre-commit.local` (FORBIDDEN array) if needed; gitignored. The hook is run explicitly in Step 5 before every commit.
-- `settings.local.json` is **never** synced — it's machine-local (paths, personal tokens).
-- Project-scoped agents (e.g. in `~/Hermes/.claude/agents/`) are never synced here — only `~/.claude/agents/`.
-- To add a skill: add it to the `claude-configs:` section in `~/.claude/skills/REGISTRY.yml` — that's the only place to edit. Step 2 reads the list from there at runtime.
-- To add an agent: add it to the `claude-configs-agents:` section in `~/.claude/skills/REGISTRY.yml` — same rule.
+- **`replacements/claude-configs.md`** — local-only (gitignored). Add a rule: `regex_pattern → replacement`. To add a name that should be **forbidden everywhere** (not just here), also append it to `~/.claude/lib/push-mirror/forbidden.txt`.
+- **`forbidden.txt`** is the master deny-list — used by the global pre-commit hook (`~/.git-hooks/pre-commit`) for any commit to a public anastasiiaanfimova/* repo. After anon, the privacy scan greps the repo dir against this file.
+- **`settings.local.json`** is **never** synced — machine-local (paths, personal tokens).
+- **Project-scoped agents** (e.g. `~/Hermes/.claude/agents/`) are never synced — only `~/.claude/agents/`.
+- **To add a skill:** add it to the `claude-configs:` section in `~/.claude/skills/REGISTRY.yml` — that's the only edit needed.
+- **To add an agent:** add it to the `claude-configs-agents:` section.
