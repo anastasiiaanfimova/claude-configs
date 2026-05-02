@@ -86,6 +86,22 @@ PreToolUse       → [dippy](https://github.com/ldayton/Dippy) (Bash commands)
 > - [#1083](https://github.com/MemPalace/mempalace/issues/1083) — Stop + PreCompact auto-run `mine` with no opt-out
 > - [#1110](https://github.com/MemPalace/mempalace/issues/1110) — feat: split `hooks.auto_save` and `hooks.auto_mine` (config option to disable mine without removing diary saves)
 
+> **code-review-graph process accumulation workaround (as of 2026-05-02):**
+>
+> When using `code-review-graph serve` with Claude Code's Agent tool, processes accumulate as
+> orphans — each subagent session spawns its own MCP processes, and when the subagent exits its
+> children get reparented to PID 1 instead of being killed. With 3 repos × multiple subagent
+> sessions, 20+ processes can accumulate, consuming ~17% CPU.
+>
+> **Workaround:** two hooks in `settings.json` (included in this config):
+> - `SessionStart → crg-dedup.sh orphans` — kills processes orphaned by crashed sessions (PPID=1)
+> - `Stop → crg-dedup.sh dedup` — keeps one process per repo, kills extras
+>
+> The script lives at `~/.claude/scripts/crg-dedup.sh` (not in this repo — local only).
+>
+> Remove the hooks once this is resolved upstream:
+> - [#416](https://github.com/tirth8205/code-review-graph/issues/416) — MCP serve processes accumulate as orphans when used with Claude Code subagents
+
 > **Requirements:** MemPalace installed at `~/.mempalace/`, code-review-graph MCP connected. If you don't use these tools, the hook structure is still a useful reference — swap in your own commands.
 
 ## Credential management
