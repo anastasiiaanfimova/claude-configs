@@ -41,6 +41,9 @@ Stop             → MemPalace stop hook (sync)
                    This is how memories actually get saved.
                  → episodic-memory sync (async)
                    Indexes the finished session so it's searchable later.
+                 → crg-dedup.sh dedup (async)
+                   Kills duplicate code-review-graph MCP processes — keeps one
+                   per repo, removes extras left by subagents or parallel sessions.
 
 StopFailure      → MemPalace stop hook (sync, crash path)
                    Same as Stop, but fires when the session ends due to an
@@ -53,6 +56,9 @@ PreCompact       → MemPalace precompact hook (async)
 SessionStart     → code-review-graph check
                    Warns if the codebase graph hasn't been initialized yet.
                    Reminds you to run `code-review-graph build` in new projects.
+                 → crg-dedup.sh orphans (async)
+                   Kills code-review-graph processes orphaned by crashed sessions
+                   (PPID=1). Prevents accumulation across session restarts.
 
 PreToolUse       → [dippy](https://github.com/ldayton/Dippy) (Bash commands)
                    AST-based approval filter for shell commands. Auto-approves
@@ -230,7 +236,6 @@ Skills differ from agents: agents are subprocesses dispatched for isolated subta
 |---|---|
 | `history-cleanup` | Manual Claude Code history cleanup. Shows what will be deleted (log size, old session files), asks for confirmation, then runs. Use instead of the automatic Stop hook — run when you actually want to prune. |
 | `claude-cleanup` | Audit and clean up the Claude Code setup — find stale skill/agent references, duplicate sources of truth, unnecessary MCP wrappers, parasitic directories (`.cursor/`, `.agents/`), and mismatches in the skills publish registry. Updates the MemPalace architecture drawer at the end. |
-| `mac-cleanup` | macOS system cleanup — scans for artifacts from removed apps, stale configs, and old caches, then removes them. Three-phase flow: survey (read-only) → confirm → clean. Fully automated for safe operations; asks for anything non-obvious. |
 | `workspace-setup` | One-time project initialization. Configures `.mcp.json` and `.claude/settings.local.json` for MemPalace + episodic-memory, creates project memory files, checks code-review-graph, adds the project to the KG, and writes a diary entry. Automatically picks the right palace strategy: shared palace for sub-projects inside `~/Claude/`, isolated palace for top-level projects. |
 | `claude-audit` | Cross-project Claude tooling audit. Reads MemPalace across all project wings + diary, searches the web for new Claude Code / Anthropic updates, compares against an existing local `IMPROVEMENTS.md`, and writes the updated file with status tracking. Fully automatic — no user input needed. |
 | `claude-config-push` | Syncs `~/.claude/` files to this GitHub repo. Diffs local vs repo, anonymizes private project names, commits only changed files. Handles CLAUDE.md, settings.json, all agents, and public skills. Updates README if content changed. |

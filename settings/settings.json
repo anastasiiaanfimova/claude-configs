@@ -43,6 +43,11 @@
             "type": "command",
             "command": "episodic-memory sync",
             "async": true
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/scripts/crg-dedup.sh dedup",
+            "async": true
           }
         ]
       }
@@ -77,6 +82,11 @@
           {
             "type": "command",
             "command": "bash -c 'CWD=$(pwd); if ls \"$CWD\" 2>/dev/null | grep -qE \"^(package\\.json|go\\.mod|requirements\\.txt|Cargo\\.toml|pyproject\\.toml|build\\.gradle|\\.git)$\"; then if [ ! -d \"$CWD/.code-review-graph\" ]; then echo \"SETUP NEEDED: code-review-graph not initialized in this project. Run: code-review-graph install --platform claude-code && code-review-graph build\"; fi; fi'"
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/scripts/crg-dedup.sh orphans",
+            "async": true
           }
         ]
       }
