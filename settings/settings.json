@@ -7,7 +7,6 @@
       "Edit(/tmp/*)"
     ]
   },
-  "model": "sonnet",
   "hooks": {
     "PreToolUse": [
       {
@@ -108,5 +107,7 @@
       }
     }
   },
-  "theme": "dark-ansi"
+  "effortLevel": "high",
+  "theme": "dark-ansi",
+  "model": "sonnet"
 }

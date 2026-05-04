@@ -3,7 +3,8 @@ name: claude-cleanup
 description: >-
   Audit and clean up the Claude Code setup — find stale skill/agent references,
   duplicate sources of truth, unnecessary MCP wrappers, parasitic directories
-  (.cursor/, .agents/), and mismatches in the skills publish registry.
+  (.cursor/, .agents/), mismatches in the skills publish registry, plus old
+  session history and orphan MCP processes.
   Updates the MemPalace architecture drawer at the end.
   Trigger: "cleanup claude", "прибраться в клоде", "аудит конфигурации клода",
   "clean up skills", "что устарело", "check for stale references",
@@ -13,7 +14,8 @@ description: >-
 # Cleanup Claude Setup
 
 Audits the Claude Code configuration for decay: stale references, duplicate documentation,
-unnecessary complexity, and orphaned files. Proposes fixes, asks for confirmation, executes.
+unnecessary complexity, orphaned files, accumulated session history, and zombie MCP
+processes. Proposes fixes, asks for confirmation, executes.
 
 ## Scope
 
@@ -87,6 +89,15 @@ Read `~/.claude/skills/REGISTRY.yml` (source of truth).
 
 Note: `claude-config-push` and `qa-playbook-push` no longer have their own hardcoded skill lists — they read from REGISTRY.yml directly. Do NOT check for list consistency in those files.
 
+### 6 — Session history and orphan MCP processes
+
+Two cleanup scripts live in `~/.claude/scripts/`:
+
+- `history-cleanup.sh` — trims `hook-approvals.log` to 500 lines, deletes `.jsonl` session logs older than 30 days, removes orphaned subagent dirs.
+- `kill-orphan-mcp.sh` — finds MCP server processes older than 1h (code-review-graph, mempalace, sentry, asana, grafana, gitlab, postgres, chrome-devtools, episodic-memory, infisical run wrappers) that survived their parent session.
+
+These run in Step 4 of the workflow below.
+
 ---
 
 ## Workflow
@@ -129,7 +140,41 @@ Apply each fix the user confirmed:
 
 For each change: print what was done (one line per action).
 
-### Step 4 — Update MemPalace
+### Step 4 — System cleanup (history + orphan MCPs)
+
+Run the two cleanup scripts. Order: history first (it's silent), then orphan MCPs (interactive).
+
+**4a — History cleanup**
+
+```bash
+bash ~/.claude/scripts/history-cleanup.sh
+```
+
+Report what was trimmed (log file size before/after, number of `.jsonl` removed).
+
+**4b — Orphan MCP processes (dry-run → ask → kill)**
+
+First run dry-run to see what's there:
+
+```bash
+bash ~/.claude/scripts/kill-orphan-mcp.sh
+```
+
+If output says `No orphan MCP processes found` → done, move to Step 5.
+
+If orphans are listed: show the list to the user with sizes/ages, then ask:
+"Убить эти orphan MCP-процессы?"
+
+On confirmation, run with `--kill`:
+
+```bash
+bash ~/.claude/scripts/kill-orphan-mcp.sh --kill
+```
+
+If some processes survive (output says "Killed most. N still alive"), ask:
+"Force-kill оставшиеся (SIGKILL)?" → on yes, run with `--kill -9`.
+
+### Step 5 — Update MemPalace
 
 After fixes are applied, update the architecture drawer in MemPalace:
 1. Delete the existing `wing_claude / config` drawer (search for it first with `mempalace_search`)

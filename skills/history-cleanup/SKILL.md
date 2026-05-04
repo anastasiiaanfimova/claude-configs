@@ -48,4 +48,4 @@ Wait for confirmation before proceeding.
 
 ### Phase 3 — Clean
 
-Run `bash ~/.claude/scripts/cleanup_history.sh` and report what was done.
+Run `bash ~/.claude/scripts/history-cleanup.sh` and report what was done.

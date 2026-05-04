@@ -236,7 +236,7 @@ Two files that extend the hook infrastructure.
 |------|-------------|
 | `pre-commit` | Global git pre-commit hook — blocks private project names from leaking into public repos. Reads the deny list from `~/.claude/lib/push-mirror/forbidden.txt` (one pattern per line). Runs only for public repos under `anastasiiaanfimova`. |
 
-> **Local-only scripts** (not in this repo): [`statusline.sh`](https://github.com/anastasiiaanfimova/claude-statusline) — populates the status bar; `cleanup_history.sh` — manual history cleanup (invoked via `/cleanup-history` skill); `palace_detect.sh` — lives in `~/.mempalace/`, part of the MemPalace installation.
+> **Local-only scripts** (not in this repo): [`statusline.sh`](https://github.com/anastasiiaanfimova/claude-statusline) — populates the status bar; `history-cleanup.sh` — manual history cleanup (invoked via `/history-cleanup` skill); `kill-orphan-mcp.sh` — finds and kills MCP server processes orphaned from crashed sessions; `palace_detect.sh` — lives in `~/.mempalace/`, part of the MemPalace installation.
 
 ### `skills/`
 
@@ -250,8 +250,8 @@ Skills differ from agents: agents are subprocesses dispatched for isolated subta
 
 | Skill | What it does |
 |---|---|
-| `history-cleanup` | Manual Claude Code history cleanup. Shows what will be deleted (log size, old session files), asks for confirmation, then runs. Use instead of the automatic Stop hook — run when you actually want to prune. |
-| `claude-cleanup` | Audit and clean up the Claude Code setup — find stale skill/agent references, duplicate sources of truth, unnecessary MCP wrappers, parasitic directories (`.cursor/`, `.agents/`), and mismatches in the skills publish registry. Updates the MemPalace architecture drawer at the end. |
+| `history-cleanup` | Manual Claude Code history cleanup. Shows what will be deleted (log size, old session files, orphaned subagent dirs), asks for confirmation, then runs. Use instead of the automatic Stop hook — run when you actually want to prune. |
+| `claude-cleanup` | Audit and clean up the Claude Code setup — find stale skill/agent references, duplicate sources of truth, unnecessary MCP wrappers, parasitic directories (`.cursor/`, `.agents/`), and mismatches in the skills publish registry. Also runs system cleanup: trims old session history and kills orphan MCP processes from crashed sessions. Updates the MemPalace architecture drawer at the end. |
 | `workspace-setup` | One-time project initialization. Configures `.mcp.json` and `.claude/settings.local.json` for MemPalace + episodic-memory, creates project memory files, checks code-review-graph, adds the project to the KG, and writes a diary entry. Automatically picks the right palace strategy: shared palace for sub-projects inside `~/Claude/`, isolated palace for top-level projects. |
 | `claude-audit` | Cross-project Claude tooling audit. Reads MemPalace across all project wings + diary, searches the web for new Claude Code / Anthropic updates, compares against an existing local `IMPROVEMENTS.md`, and writes the updated file with status tracking. Fully automatic — no user input needed. |
 | `claude-config-push` | Syncs `~/.claude/` files to this GitHub repo. Diffs local vs repo, anonymizes private project names, commits only changed files. Handles CLAUDE.md, settings.json, all agents, and public skills. Updates README if content changed. |
