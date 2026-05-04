@@ -21,7 +21,7 @@ This setup layers four independent memory systems on top of Claude Code. Each so
 | **Codebase structure** | [code-review-graph](https://github.com/tirth8205/code-review-graph) | Functions, classes, call relationships, imports — parsed from source with Tree-sitter, queryable as a graph |
 | **In-project notes** | Claude Code built-in auto-memory | Markdown files in `~/.claude/projects/*/memory/` — facts Claude saves during sessions |
 
-> Contributed the high-water-mark fix for [episodic-memory#84](https://github.com/obra/episodic-memory/issues/84) — incremental indexing of appended exchanges, [shipped in v1.1.0](https://github.com/obra/episodic-memory/releases/tag/v1.1.0).
+> Contributed the high-water-mark fix for incremental indexing of appended exchanges in episodic-memory ([PR #85](https://github.com/obra/episodic-memory/pull/85)) — [shipped in v1.1.0](https://github.com/obra/episodic-memory/releases/tag/v1.1.0).
 
 None of these overlap: MemPalace is about the agent knowing the user, episodic-memory is a searchable archive of raw conversation history, code-review-graph is about knowing the codebase, auto-memory is about in-project scratchpad facts.
 
