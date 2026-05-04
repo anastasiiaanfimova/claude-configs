@@ -17,7 +17,7 @@ This setup layers four independent memory systems on top of Claude Code. Each so
 | Layer | Tool | What it remembers |
 |-------|------|-------------------|
 | **Cross-session agent memory** | [MemPalace](https://github.com/MemPalace/mempalace) | Who the user is, project context, feedback, preferences — persists across sessions in a diary + knowledge graph |
-| **Conversation search** | [episodic-memory](https://github.com/Anthropic/episodic-memory) | Full-text index of past Claude Code sessions — searchable by topic, code, or question. Synced at session end. |
+| **Conversation search** | [episodic-memory](https://github.com/obra/episodic-memory) | Full-text index of past Claude Code sessions — searchable by topic, code, or question. Synced at session end. |
 | **Codebase structure** | [code-review-graph](https://github.com/tirth8205/code-review-graph) | Functions, classes, call relationships, imports — parsed from source with Tree-sitter, queryable as a graph |
 | **In-project notes** | Claude Code built-in auto-memory | Markdown files in `~/.claude/projects/*/memory/` — facts Claude saves during sessions |
 
