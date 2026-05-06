@@ -25,13 +25,13 @@ This setup layers four independent memory systems on top of Claude Code. Each so
 
 None of these overlap: MemPalace is about the agent knowing the user, episodic-memory is a searchable archive of raw conversation history, code-review-graph is about knowing the codebase, auto-memory is about in-project scratchpad facts.
 
-Since MemPalace captures everything important across sessions, raw `.jsonl` session logs are just disk clutter. Run `/history-cleanup` manually whenever you want to prune logs older than 30 days. The `memory/` directory is always preserved.
+Since MemPalace captures everything important across sessions, raw `.jsonl` session logs are just disk clutter. The `history-cleanup` script runs automatically on SessionStart (async, no slowdown) — prunes logs older than 30 days, removes orphaned subagent dirs, and clears project state for worktrees that no longer exist. Invoke `/history-cleanup` manually for ad-hoc inspection or extra-aggressive cleanup. The `memory/` directory is always preserved.
 
 ## What's inside
 
 ### `settings/settings.json`
 
-Six hooks that wire the memory stack and safety layer into Claude Code:
+Seven hooks that wire the memory stack, safety layer, and history hygiene into Claude Code:
 
 ```
 UserPromptSubmit → MemPalace session-start hook
@@ -61,6 +61,10 @@ SessionStart     → code-review-graph check
                  → crg-dedup.sh orphans (async)
                    Kills code-review-graph processes orphaned by crashed sessions
                    (PPID=1). Prevents accumulation across session restarts.
+                 → history-cleanup.sh (async)
+                   Trims hook-approvals.log, removes .jsonl session logs older
+                   than 30 days, removes orphaned subagent dirs and project
+                   dirs whose worktrees no longer exist.
 
 PreToolUse       → [dippy](https://github.com/ldayton/Dippy) (Bash commands)
                    AST-based approval filter for shell commands. Auto-approves
@@ -71,7 +75,7 @@ PreToolUse       → [dippy](https://github.com/ldayton/Dippy) (Bash commands)
 
 > **MemPalace workarounds (as of v3.3.1 stable, 2026-04-29):**
 >
-> All six hooks are active. The `mine` (indexing) sub-process is disabled via a local venv patch —
+> All seven hooks are active. The `mine` (indexing) sub-process is disabled via a local venv patch —
 > all hooks run normally and diary saves work, but `mempalace mine` is never spawned.
 >
 > **Why:** `mine --mode convos` scans the entire session directory (100+ JSONL files) on every
@@ -252,7 +256,7 @@ Skills differ from agents: agents are subprocesses dispatched for isolated subta
 
 | Skill | What it does |
 |---|---|
-| `history-cleanup` | Manual Claude Code history cleanup. Shows what will be deleted (log size, old session files, orphaned subagent dirs), asks for confirmation, then runs. Use instead of the automatic Stop hook — run when you actually want to prune. |
+| `history-cleanup` | Claude Code history cleanup — invoked manually for ad-hoc inspection, also runs automatically on SessionStart (async). Trims `hook-approvals.log` to 500 lines, removes `.jsonl` session logs older than 30 days, removes orphaned subagent dirs, removes project dirs whose worktrees no longer exist, and purges full project state for projects whose cwd no longer exists on disk. |
 | `claude-cleanup` | Audit and clean up the Claude Code setup — find stale skill/agent references, duplicate sources of truth, unnecessary MCP wrappers, parasitic directories (`.cursor/`, `.agents/`), and mismatches in the skills publish registry. Also runs system cleanup: trims old session history and kills orphan MCP processes from crashed sessions. Updates the MemPalace architecture drawer at the end. |
 | `workspace-setup` | One-time project initialization. Configures `.mcp.json` and `.claude/settings.local.json` for MemPalace + episodic-memory, creates project memory files, checks code-review-graph, adds the project to the KG, and writes a diary entry. Automatically picks the right palace strategy: shared palace for sub-projects inside `~/Claude/`, isolated palace for top-level projects. |
 | `claude-audit` | Cross-project Claude tooling audit. Reads MemPalace across all project wings + diary, searches the web for new Claude Code / Anthropic updates, compares against an existing local `IMPROVEMENTS.md`, and writes the updated file with status tracking. Fully automatic — no user input needed. |

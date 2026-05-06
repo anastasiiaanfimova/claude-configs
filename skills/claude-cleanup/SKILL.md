@@ -30,6 +30,52 @@ For each skill in `~/.claude/skills/*/SKILL.md` and each agent in `~/.claude/age
 
 Report each issue as: `<file>:<line> — <what's stale>`
 
+### 1a — CLAUDE.md и memory drift
+
+Файлы для скана:
+- `~/.claude/CLAUDE.md` (global)
+- `~/<active-project>/CLAUDE.md` (project — для активного worktree)
+- `~/.claude/projects/<project-slug>/memory/MEMORY.md`
+- `~/.claude/projects/<project-slug>/memory/*.md`
+
+Truth sources:
+- MCP servers: `jq -r '.mcpServers | keys[]' ~/.claude.json ~/<project>/.mcp.json`
+- Skills: `ls ~/.claude/skills/` (без REGISTRY.yml)
+- Agents: `ls ~/.claude/agents/` (без `.md`)
+- Excludes: `~/.claude/skills/claude-cleanup/scanner_excludes.txt`
+
+Что искать:
+
+**(a) MCP server names** — паттерн `mcp__<server>__<tool>`. Извлечь `<server>`, сравнить с truth list. Flag: `<server>` которого нет в `.mcp.json`.
+```bash
+grep -ohE "mcp__[a-zA-Z0-9-]+__" $FILES | sed 's/^mcp__//; s/__$//' | sort -u
+```
+
+**(b) Skill names** — backtick/slash-обёрнутые hyphenated lowercase имена. Сравнить с truth list (skills + agents + excludes). Flag: остаток.
+```bash
+grep -ohE "[\`/]([a-z][a-z0-9]+-[a-z][a-z0-9-]+)[\` ]" $FILES | sed 's/^[`\/]//; s/[` ]$//' | sort -u
+```
+
+**(c) Agent names** — `subagent_type=<name>` или `<name> agent` или `agent: <name>`. Сравнить с `~/.claude/agents/`.
+
+**(d) File paths** — все `~/.claude/...`, `~/<project>/...`, `/Users/<user>/...`. Каждый — `test -e`.
+```bash
+grep -ohE "(~/\.claude/[a-zA-Z0-9_./-]+|~/<project>/[a-zA-Z0-9_./-]+|/Users/<user>/[a-zA-Z0-9_./-]+)" $FILES | sort -u
+```
+
+Report:
+```
+## CLAUDE.md drift (N issues)
+- ~/.claude/CLAUDE.md:42 — упомянут `mcp__old-server__foo` — server не в .mcp.json
+- memory/feedback_X.md:13 — путь `~/.claude/mcp-servers/` не существует
+```
+
+**Anti-patterns:**
+- Не флагать historical контекст («раньше было X, теперь Y», «deprecated», «renamed to»). Heuristic: рядом с упоминанием есть «было»/«старое»/«deprecated»/«renamed»/«убрано» — пропустить.
+- False positive в `scanner_excludes.txt` → добавить туда же, не править regex.
+
+---
+
 ### 2 — Duplicate sources of truth
 
 Search for files that describe the same information already covered by canonical sources:
@@ -104,7 +150,7 @@ These run in Step 4 of the workflow below.
 
 ### Step 1 — Run the audit
 
-Execute checks 1–5 above. Collect all findings.
+Execute checks 1, 1a, 2–5 above. Collect all findings.
 
 ### Step 2 — Present findings
 
