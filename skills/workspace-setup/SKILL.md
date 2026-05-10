@@ -1,214 +1,186 @@
 ---
 name: workspace-setup
 description: >-
-  One-time project setup — initialize MemPalace context, episodic-memory,
-  code-review-graph, and project memory files. Run once per new project directory.
-  Trigger: "/setup", "setup project", "инициализируй проект", "настрой проект",
-  "первый запуск", "init project memory".
+  Methodology for one-time agent context bootstrap on a new project — the
+  scoping decision (shared vs isolated), the phased order (infrastructure
+  before content), and what should and shouldn't be seeded at first init.
+  Tool-agnostic — applicable to any agent stack with a knowledge layer plus
+  per-project memory.
 ---
 
-# workspace-setup — One-Time Project Setup
+# workspace-setup
 
-Run one-time setup for this project. Do all steps in order.
+Bootstrapping a project for an agent is two decisions stacked: **what
+scope of memory should this project share with others**, and **in what
+order do you wire the pieces so the agent can use them in this same
+session**. Get scope wrong and contexts bleed; get order wrong and you
+spend the first session debugging plumbing instead of working.
 
-Derive the project name from the current directory name (lowercase).
+## The scoping decision: shared vs isolated context
 
-**Determine palace strategy** based on the current directory path:
-- If the current directory is inside `/Users/<user>/Claude/` (a sub-project of the Claude workspace) → **shared palace** (no `--palace` flag, uses `~/.mempalace/palace` via palace_detect.sh)
-- Otherwise (top-level independent project like <project>, <project>) → **separate palace** at `/Users/<user>/.<project-name>/mempalace`
+Before touching files, decide which context bucket this project belongs to:
 
----
+- **Shared** — the project belongs to a workspace where multiple
+  sub-projects collaborate on related work. Memory pools together; the
+  agent crossing project boundaries inside this workspace finds what it
+  needs.
+- **Isolated** — the project is a top-level concern with its own domain,
+  audience, or compliance posture. Mixing memory with another project
+  would leak context (work topics into personal projects, client A into
+  client B).
 
-### Phase 1 — Infrastructure
+The default heuristic: a project nested inside a known workspace
+directory → shared. A standalone top-level project directory → isolated.
 
-Check if `.mcp.json` exists in the current project root AND contains a `mempalace` entry.
+Get this wrong in one direction (sharing where it should be isolated)
+and you'll spend cleanup time later splitting palaces / pruning
+cross-talk. Get it wrong in the other (isolating what should be shared)
+and you'll be re-explaining the same context to the agent every time
+you cross a sub-project boundary. Slightly safer to err toward
+isolation — merging is easier than splitting after the fact.
 
-**If `.mcp.json` is missing or has no `mempalace` entry:**
+## Phased setup: infrastructure first, restart, then content
 
-1. Create or update `.mcp.json` — add the `mempalace` server (merge with existing content if file exists):
+Agent CLIs typically only see MCP servers and permission settings at
+session start. Wiring an MCP server in the middle of a setup session
+won't expose its tools to the same session — you have to restart.
 
-   **For shared palace (project is inside ~/Claude/):**
-   ```json
-   {
-     "mcpServers": {
-       "mempalace": {
-         "command": "/Users/<user>/.mempalace/venv/bin/python3",
-         "args": ["-m", "mempalace.mcp_server"],
-         "type": "stdio",
-         "env": {}
-       }
-     }
-   }
-   ```
+This forces a phase split:
 
-   **For separate palace (top-level independent project):**
-   ```json
-   {
-     "mcpServers": {
-       "mempalace": {
-         "command": "/Users/<user>/.mempalace/venv/bin/python3",
-         "args": ["-m", "mempalace.mcp_server", "--palace", "/Users/<user>/.<project-name>/mempalace"],
-         "type": "stdio",
-         "env": {}
-       }
-     }
-   }
-   ```
+### Phase 1 — Infrastructure (no agent calls)
 
-2. Check if `.mcp.json` contains an `episodic-memory` entry. If not — add it (merge, don't overwrite):
-   ```json
-   {
-     "mcpServers": {
-       "episodic-memory": {
-         "command": "episodic-memory-mcp-server",
-         "type": "stdio",
-         "env": {}
-       }
-     }
-   }
-   ```
-   Note: episodic-memory uses a single global index regardless of project — no path customization needed.
+Edit the configuration files that the next session will read:
 
-3. Create or update `.claude/settings.local.json` — add both servers to permissions and enabledMcpjsonServers (merge, don't overwrite):
-   - Add `"mcp__mempalace__*"` to `permissions.allow` if not already there
-   - Add `"mcp__episodic-memory__*"` to `permissions.allow` if not already there
-   - Add `"mempalace"` to `enabledMcpjsonServers` if not already there
-   - Add `"episodic-memory"` to `enabledMcpjsonServers` if not already there
+- The MCP/server descriptor (`.mcp.json` or equivalent) — declare the
+  servers this project needs
+- The local permission file (whatever the agent uses for project-level
+  allow-lists) — grant the new servers permission to be called
+- Both are merge operations, not overwrites — a project may already
+  have other MCP servers configured
 
-4. Tell the user:
-> Файлы созданы. Перезапусти сессию (закрой и открой Claude Code в этой папке) и запусти `/setup` снова — теперь MemPalace и episodic-memory подключатся автоматически.
+Then **stop**. Tell the user to restart the agent in this directory and
+re-run the setup. Do not pretend you'll be able to call the new servers
+in the current session — the call will fail or return stale state.
 
-Then stop. Do not continue to Phase 2.
+### Phase 2 — Content (after restart)
 
----
+Now the new servers are live. This phase populates them:
 
-### Phase 2 — MemPalace setup
+- Verify the agent can reach the new infrastructure (a status call to
+  confirm)
+- Seed any structural conventions for new isolated stores (see below)
+- Create per-project memory files
+- Record the project in the knowledge graph
+- Write a diary entry that captures what setup happened
 
-Only run this phase if `mempalace_status` is available (MCP connected).
+Phase 2 only runs when Phase 1 verification passes. If the user
+re-invokes setup before restarting → detect that the new servers are
+unavailable and refuse to proceed past Phase 1. The error message
+should be specific ("restart and re-run") rather than the generic MCP
+failure.
 
-**Step 1 — Check palace**
-Call `mempalace_status`, then `mempalace_search` using the project name to find any existing knowledge.
+## Seed structure for new isolated contexts
 
-**Step 2 — Seed organization rules (separate palace only)**
+A fresh isolated knowledge store starts empty. If you don't seed it
+with conventions on day one, every drawer/entry you add later
+accumulates ad-hoc. Seed once, the pattern follows.
 
-Skip this step if the project is inside `~/Claude/` (shared palace — rules already exist in `wing_claude/decisions`).
+Useful seed content for an isolated store:
 
-For independent projects with a separate palace: call `mempalace_add_drawer` to seed the organization rules so every new palace starts with structure:
+- **Room/category schema** — what each top-level container is for
+  (`decisions` / `config` / `recipes` / `rules` etc., names that match
+  your taxonomy)
+- **Naming convention** for tool-specific entries (e.g. `<tool>.mcp` for
+  per-tool config drawers)
+- **What not to store** — output dumps, ephemeral state, info derivable
+  from code/git
+- **Deduplication protocol** — when two entries overlap, which wins
 
-```
-wing: wing_<project-name>
-room: decisions
-source_file: mempalace-organization-rules
-content:
-  ## mempalace-organization-rules — правила хранения данных по MCP и тулам
+Skip seeding if the project joins a shared store — the conventions live
+there already.
 
-  ### Разграничение rooms для MCP/tools
+## Memory file pattern: auto-loaded index plus on-demand details
 
-  | room | что хранить |
-  |------|-------------|
-  | `decisions` | правила, протоколы, архитектурные решения по самому palace |
-  | `config` | конфигурация MCP-серверов, пути, порты, параметры запуска |
-  | `rules` | поведенческие правила для агента (feedback от пользователя) |
-  | `recipes` | пошаговые инструкции: как установить, настроить, починить конкретный тул |
+Per-project memory files split by access pattern:
 
-  ### Паттерн именования
+| File | Loaded | Purpose |
+|---|---|---|
+| Index file (e.g. `MEMORY.md`) | Always — auto-injected at session start | Pointers to behavior rules and key facts |
+| Behavior-rule files (`feedback_*.md`) | On demand — agent reads when relevant | Detail behind a specific rule |
+| Project-state files (`project_*.md`) | On demand | Current configs, environment specifics |
 
-  Drawer с данными по конкретному MCP-инструменту называть: `<toolname>.mcp`
-  Примеры: `mempalace.mcp`, `testiny.mcp`, `asana.mcp`, `grafana.mcp`
+The split exists because the index is *applied even when the agent
+doesn't know the rule exists* — so it must always be in context. Detail
+files are referenced only when the agent already knows what to look
+for.
 
-  ### Что НЕ хранить в palace
+Initial seed: just the index file with one or two essential pointers
+(e.g. memory protocol, scoping rules). Everything else accretes
+naturally as the project develops.
 
-  - Вывод команд целиком (логи, stdout) — только выводы
-  - Данные, которые можно получить из кода или git-истории
-  - Ephemeral state (текущие значения переменных, временные ID)
-  - Дублирующие drawer без новой информации
+## Knowledge graph entry: when, who, what
 
-  ### Протокол чистки дублей
+Add the project to the graph at setup so future sessions can answer
+"when did this start? what is it?" without re-asking. Minimum:
 
-  При обнаружении двух drawer с похожим содержимым:
-  - A ⊂ B (A полностью покрыт B) → удалить A, оставить B
-  - Оба содержат уникальные детали → мержить в один, удалить оба исходных
-  - Проверять через `mempalace_check_duplicate` перед добавлением нового
+- Setup date
+- Scope (shared / isolated)
+- One sentence on what the project is
 
-  ### Протокол добавления нового MCP
+Fields beyond this are nice-to-have and accumulate as you learn the
+project. Don't try to capture everything on day one — premature
+structure decays.
 
-  1. `mempalace_check_duplicate` — убедиться что такого drawer ещё нет
-  2. Если нет — создать drawer `<toolname>.mcp` в `config` с: путём к серверу, командой запуска, scope (user/project), проектами где используется
-  3. Если рецепт установки нетривиален — отдельный drawer в `recipes`
-  4. После подключения — запись в diary о том что MCP добавлен и зачем
-```
+## Operator boundary: don't run installs yourself
 
-**Step 3 — Create project memory files**
+External package installs (graph parsers, build steps, indexing tools)
+should be **invoked by the user**, not by the agent. Reasons:
 
-The project memory path is `~/.claude/projects/<encoded-path>/memory/` where `<encoded-path>` is the absolute path to the current directory with `/` replaced by `-`.
+- Installs may need terminal-level permissions the agent doesn't have
+- Output is interactive (progress bars, password prompts) and breaks
+  cleanly outside the agent's tool stream
+- The user gets to see the install actually happen, not a wrapped log
 
-Create the following files if they don't already exist:
+Agent's job: detect whether the install is needed (`is the directory
+present?`), and if not, output the exact command for the user to run.
+Don't shell-out the install yourself.
 
-**MEMORY.md**:
-```
-# MEMORY.md
+## Idempotency
 
-- [Memory protocol](feedback_use_mempalace.md) — старт: MemPalace + episodic параллельно; маршрутизация по типу вопроса; diary в конце
-```
+Setup must be safe to re-run. Means:
 
-**feedback_use_mempalace.md**:
-```
----
-name: MemPalace protocol — обязательный порядок работы с памятью
-description: Конкретный протокол — что делать при старте, во время и в конце каждой сессии
-type: feedback
----
+- Detecting "this file already has my entry" before adding
+- Merging into existing structures, never replacing
+- The user might re-invoke setup after fixing one piece — they
+  shouldn't fear losing other state
 
-**КРИТИЧЕСКИ ВАЖНО — выполнять в каждой сессии, даже после компакта:**
+Idempotency is the single feature that makes setup safe to run after a
+restart. Without it, partial-init becomes a fragile sequence.
 
-## При старте сессии (параллельно):
-1. Вызвать `mempalace_status`
-2. Вызвать `mempalace_search` по теме разговора или имени проекта
-3. Вызвать `mcp__episodic-memory__search` по сегодняшней дате + теме
+## Hard rules
 
-## Во время сессии (маршрутизация по типу вопроса):
-- **Факты, решения, люди, проекты** → `mempalace_search` или `mempalace_kg_query`
-- **Конкретные слова, ошибки, команды, URL** → `mcp__episodic-memory__search` сразу
-- **"Что было в сессии где делали X"** → оба параллельно
-- Файлы из memory/ — только если оба не дали ответа
+- ✅ Decide scope (shared vs isolated) **before** writing files
+- ✅ Phase 1 stops at "restart and re-run"; Phase 2 starts only after
+  the new infrastructure verifies
+- ✅ Seed structure once, on first init of an isolated store
+- ✅ Index memory file is always created; rule files only when there
+  are rules to encode
+- ✅ Knowledge graph gets a setup-date entry on day one
+- ✅ Diary entry records what setup did and didn't do
+- ❌ Don't pretend Phase 2 can run in the same session as Phase 1
+- ❌ Don't run external installs from the agent
+- ❌ Don't overwrite existing config files — merge
 
-## Дополнение diary:
-Если diary-запись слишком сжата и детали непонятны → `mcp__episodic-memory__search` по дате + ключевому слову
+## Anti-patterns
 
-## В конце сессии:
-- Вызвать `mempalace_diary_write` — записать что произошло, что узнала, что важно
-
-**Why:** Проекты внутри ~/Claude/ используют общий palace (~/.mempalace/palace). Независимые проекты имеют свой изолированный palace. MemPalace и episodic — равноправные инструменты с разными ролями, не иерархия.
-```
-
-**Step 4 — Set up code-review-graph**
-
-Check if `.code-review-graph/` directory exists in the current project root.
-
-- **If it exists** — confirm it's already set up, skip.
-- **If it doesn't exist** — tell the user:
-  > code-review-graph не настроен. Чтобы установить, выполни в терминале:
-  > ```
-  > code-review-graph install --platform claude-code && code-review-graph build
-  > ```
-  > После установки граф будет автоматически обновляться при изменениями файлов.
-
-Don't run the command yourself — the user needs to run it manually in the project terminal.
-
-**Step 5 — Add project to MemPalace knowledge graph**
-
-Call `mempalace_kg_add` with:
-- subject: project name (directory name)
-- predicate: `setup_date`
-- object: today's date (YYYY-MM-DD)
-
-Ask the user: "Расскажи пару слов о проекте — что это, твоя роль, что важно помнить?" Then add what they say as additional KG facts.
-
-**Step 6 — Write diary entry**
-
-Call `mempalace_diary_write` with agent_name `claude`, topic = project name.
-Record: project name, setup date, what you learned about the project in this session.
-
-**Step 7 — Report**
-
-Tell the user what was set up and confirm the project is ready.
+- ❌ Setting up a sub-project as isolated "to be safe" — produces
+  fragmented memory across what should be one context
+- ❌ Setting up a top-level project as shared — leaks unrelated topics
+- ❌ One-shot all-in-one setup that runs MCP calls in the same session
+  as MCP wiring — fails silently
+- ❌ Seeding structure into a shared store on every new sub-project —
+  duplicates the conventions
+- ❌ Index memory file with everything inline — defeats the
+  index-vs-detail split
+- ❌ No diary entry — the setup itself becomes invisible after the
+  session ends

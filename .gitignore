@@ -35,4 +35,6 @@ settings.local.json
 skills/push-config/replacements.md
 !scripts/
 !scripts/**
+!examples/
+!examples/**
 hooks/pre-commit.local

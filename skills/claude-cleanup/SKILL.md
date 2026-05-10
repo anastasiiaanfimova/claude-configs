@@ -1,243 +1,196 @@
 ---
 name: claude-cleanup
 description: >-
-  Audit and clean up the Claude Code setup — find stale skill/agent references,
-  duplicate sources of truth, unnecessary MCP wrappers, parasitic directories
-  (.cursor/, .agents/), mismatches in the skills publish registry, plus old
-  session history and orphan MCP processes.
-  Updates the MemPalace architecture drawer at the end.
-  Trigger: "cleanup claude", "прибраться в клоде", "аудит конфигурации клода",
-  "clean up skills", "что устарело", "check for stale references",
-  "наведи порядок в конфигурации", "audit claude setup".
+  Methodology for periodic agent-config audits — detecting stale references,
+  duplicate documentation, useless wrappers, parasitic directories, and
+  approval-log accumulation. Centers on the survey-confirm-execute pattern
+  and the truth-source-vs-claim diff that powers stale detection.
+  Tool-agnostic — applies to any agent stack with declarative configs and
+  documentation files that drift.
 ---
 
-# Cleanup Claude Setup
+# claude-cleanup
 
-Audits the Claude Code configuration for decay: stale references, duplicate documentation,
-unnecessary complexity, orphaned files, accumulated session history, and zombie MCP
-processes. Proposes fixes, asks for confirmation, executes.
+An agent's config decays the same way any code decays: rename a tool,
+forget to update three docs that referenced it; add a new MCP server,
+leave an old wrapper that does nothing; copy a setup pattern, forget
+that another file already documented it. The mess is invisible day to
+day and corrosive over months.
 
-## Scope
+This methodology audits the decay in categorical passes, asks before
+fixing, and updates the architecture snapshot at the end so the next
+audit starts from a known-good baseline.
 
-### 1 — Skills and agents: stale internal references
+## Survey → confirm → execute (never auto-fix)
 
-For each skill in `~/.claude/skills/*/SKILL.md` and each agent in `~/.claude/agents/*.md`:
+The audit is **never** allowed to fix things during the survey pass.
+Agents that find issues and silently rewrite files corrupt trust the
+first time they're wrong. The pattern is always:
 
-- Grep for file paths that no longer exist on disk (e.g., `mcp-servers/<name>/start.sh`, `commands/`, `scripts/`)
-- Check for old skill/tool names that were renamed (scan for names that appear in skill files but not in the filesystem)
-- Check if skill `name:` frontmatter matches the directory name
-- Flag any `description:` trigger list that mentions a name different from the skill's actual `name:`
+1. **Survey** — read-only categorical scan, collect findings
+2. **Confirm** — show the user grouped findings with proposed fixes,
+   wait for explicit per-category yes/no/skip
+3. **Execute** — apply only what was confirmed, one line of output
+   per action taken
 
-Report each issue as: `<file>:<line> — <what's stale>`
+If a category's finding count is zero, say so explicitly (`— None ✓`).
+A silent skip looks the same as a skipped check, and the user can't
+tell whether the audit actually ran.
 
-### 1a — CLAUDE.md и memory drift
+## The stale-reference category: truth-source-vs-claim diff
 
-Файлы для скана:
-- `~/.claude/CLAUDE.md` (global)
-- `~/<active-project>/CLAUDE.md` (project — для активного worktree)
-- `~/.claude/projects/<project-slug>/memory/MEMORY.md`
-- `~/.claude/projects/<project-slug>/memory/*.md`
+Most cleanup targets are claims about state that no longer match
+reality. The audit gets leverage by being explicit about both sides:
 
-Truth sources:
-- MCP servers: `jq -r '.mcpServers | keys[]' ~/.claude.json ~/<project>/.mcp.json`
-- Skills: `ls ~/.claude/skills/` (без REGISTRY.yml)
-- Agents: `ls ~/.claude/agents/` (без `.md`)
-- Excludes: `~/.claude/skills/claude-cleanup/scanner_excludes.txt`
+- **Where the claim lives** — `file:line` of the text that asserts X
+  exists / works / lives at path Y
+- **Where ground truth lives** — the filesystem, the live config file,
+  `which <binary>`, an MCP server's running state
 
-Что искать:
+The diff between them is the finding. Stale claim, stale entry,
+mismatched name — all variations of "claim ≠ truth."
 
-**(a) MCP server names** — паттерн `mcp__<server>__<tool>`. Извлечь `<server>`, сравнить с truth list. Flag: `<server>` которого нет в `.mcp.json`.
-```bash
-grep -ohE "mcp__[a-zA-Z0-9-]+__" $FILES | sed 's/^mcp__//; s/__$//' | sort -u
+Pattern extraction:
+
+| Claim type | Extract from text | Compare against |
+|---|---|---|
+| Tool/server name | Substring like `<scheme>__<name>__<call>` or backticked tool reference | Live config files (`.mcp.json` etc.) |
+| Skill / agent name | Hyphenated lowercase identifiers in backticks or paths | Filesystem listing of skill/agent dirs |
+| File path | Absolute or `~/`-prefixed paths in prose | `test -e <path>` |
+| Frontmatter `name:` | Skill metadata | Directory name on disk |
+
+Surface findings by file with the line and a one-line explanation:
+
+```
+~/.<agent>/skills/<skill>/SKILL.md:42 — references <old-tool>, not in current config
+~/<project>/CLAUDE.md:13 — path ~/<deleted-dir>/ no longer exists
 ```
 
-**(b) Skill names** — backtick/slash-обёрнутые hyphenated lowercase имена. Сравнить с truth list (skills + agents + excludes). Flag: остаток.
-```bash
-grep -ohE "[\`/]([a-z][a-z0-9]+-[a-z][a-z0-9-]+)[\` ]" $FILES | sed 's/^[`\/]//; s/[` ]$//' | sort -u
-```
+### Don't flag historical context
 
-**(c) Agent names** — `subagent_type=<name>` или `<name> agent` или `agent: <name>`. Сравнить с `~/.claude/agents/`.
+Documentation legitimately mentions things that don't exist anymore —
+"was X, now Y", "deprecated as of date", "renamed to Z". Heuristic:
+if a stale reference is colocated with markers like `was`, `old`,
+`deprecated`, `renamed`, or `removed`, skip it. The reference is
+deliberate.
 
-**(d) File paths** — все `~/.claude/...`, `~/<project>/...`, `/Users/<user>/...`. Каждый — `test -e`.
-```bash
-grep -ohE "(~/\.claude/[a-zA-Z0-9_./-]+|~/<project>/[a-zA-Z0-9_./-]+|/Users/<user>/[a-zA-Z0-9_./-]+)" $FILES | sort -u
-```
+### False positives belong in data, not regex
 
-Report:
-```
-## CLAUDE.md drift (N issues)
-- ~/.claude/CLAUDE.md:42 — упомянут `mcp__old-server__foo` — server не в .mcp.json
-- memory/feedback_X.md:13 — путь `~/.claude/mcp-servers/` не существует
-```
+A pattern that misfires (e.g. matches a documentation token that
+isn't really a tool name) goes into an excludes file alongside the
+audit logic. Tweaking the regex to dodge specific cases couples the
+detector to one project's vocabulary. The excludes file is data; it
+travels with the audit and stays editable.
 
-**Anti-patterns:**
-- Не флагать historical контекст («раньше было X, теперь Y», «deprecated», «renamed to»). Heuristic: рядом с упоминанием есть «было»/«старое»/«deprecated»/«renamed»/«убрано» — пропустить.
-- False positive в `scanner_excludes.txt` → добавить туда же, не править regex.
+## The duplicate-source-of-truth category
 
----
+A canonical source for any fact: skill spec, agent file, project
+instructions, public README, architecture snapshot. A new file
+covering the same topic is a duplicate worth flagging — divergence is
+the cost.
 
-### 2 — Duplicate sources of truth
+Detection:
 
-Search for files that describe the same information already covered by canonical sources:
+- Look for files in `docs/` directories, README variants, "overview"
+  files
+- For each candidate: cross-check what topics it covers against the
+  canonical source list
+- Flag if topic overlap with a canonical source is significant
+  (>50% of sections / clear topical match)
 
-Canonical sources (never flag these):
-- `~/.claude/skills/<name>/SKILL.md` — skill documentation
-- `~/.claude/agents/<name>.md` — agent documentation
-- `<project>/CLAUDE.md` — project instructions
-- `claude-configs` GitHub repo README — public overview
-- MemPalace wing_claude/config drawer — architecture snapshot
+For each flagged duplicate, name the canonical source explicitly
+("`docs/X.md` covers MCP setup already in `<project>/CLAUDE.md`")
+and propose deletion. The user might keep it for a reason; surface
+the conflict, don't delete unilaterally.
 
-**Flag** any of these:
-- `docs/` directories under `~/Claude/` or project roots that contain skill/agent/MCP overviews
-- Standalone README files that duplicate CLAUDE.md content (check overlap > 50%)
-- Multiple files describing the same MCP setup
+## The wrapper-script category
 
-For each flagged file: show which canonical source already covers the topic, and recommend deleting the duplicate.
+MCP server descriptors sometimes call wrapper scripts (`start.sh`,
+custom invocations). Many of these are legitimate; some are
+historical wrappers that wrap nothing.
 
-### 3 — MCP config wrappers
+For each wrapper, read the contents and ask:
 
-For each project `.mcp.json` (`~/<project>/.mcp.json`, `~/<project>/.mcp.json`, `~/Claude/**/.mcp.json`):
+- Does it only rename an env var? → recommend renaming at the source
+  (secrets manager) instead
+- Does it only set a static URL/host? → move into the descriptor's
+  env block
+- Does it pass a secret as a CLI flag? → consider inline
+  `sh -c "..."` invocation
+- Does it just call an upstream package with no logic? → can be
+  removed; descriptor calls upstream directly
 
-For entries using a local `start.sh` or wrapper script, read the script and check:
-- Does the script only rename an env var? → recommend renaming in Infisical instead
-- Does the script only set a static URL/host? → recommend moving to `env:{}` block in `.mcp.json`
-- Does the script pass a secret as a CLI `--flag`? → check if `sh -c "..."` inline in args would work instead
+A removed wrapper is one less file to forget to update.
 
-If all a wrapper does is call an upstream package with no logic → it can be removed.
+## The parasitic-directory category
 
-### 4 — Parasitic directories
+Multiple agents/extensions sometimes target the same project layout
+under different directory names (`.cursor/`, `.agents/`, etc.). When
+your stack canonicalizes one (`.<agent>/`), the others are
+copy-paste residue from following someone else's setup guide and
+should go.
 
-Search project roots for directories that shouldn't exist:
+Search project roots for "alternate" agent-config directories. Flag
+each with one line explaining why the canonical one is sufficient.
 
-```bash
-find ~/<project> ~/<project> ~/Claude -maxdepth 3 -type d \( -name ".cursor" -o -name ".agents" \) 2>/dev/null
-```
+## The approval-log category
 
-Flag each: explain why `.claude/` is canonical and these are redundant.
+If your agent keeps a log of approval decisions (allow/ask/deny),
+that log is signal for what to add to the allow-list. Mining it:
 
-Also check `~/.claude/mcp-servers/` — list what's there and flag any that are just thin wrappers (content is only `npx` or `exec` with no logic).
+1. Extract frequent ASK patterns (≥ 2 occurrences)
+2. Filter dangerous patterns explicitly (`rm -rf`, `kill`, `sudo`,
+   shell flow control, archive-extraction wildcards) — never propose
+   these for allow even if they're frequent
+3. Cross-reference with current allow rules; skip duplicates
+4. For the rest, propose a generalized rule (file paths and hashes
+   replaced by globs)
 
-### 5 — Skills publish registry
+Show the proposal grouped by safe-to-allow vs filtered, with counts.
+Wait for confirmation before editing the config. Insert allow rules
+in the right scope position (some rule systems are
+last-match-wins — placement matters).
 
-Read `~/.claude/skills/REGISTRY.yml` (source of truth).
+## Closing pass: refresh the architecture snapshot
 
-**Check 1 — REGISTRY completeness:**
-- Every directory in `~/.claude/skills/` (excluding `REGISTRY.yml`) must appear in exactly one section of REGISTRY.yml
-- Every entry in skill sections (`claude-configs:`, `qa-playbook:`, `local:`) must correspond to an existing directory on disk
-- Every entry in `claude-configs-agents:` and `qa-playbook-agents:` must correspond to an existing file in `~/.claude/agents/`
-- Every file in `~/.claude/agents/` must appear in either `claude-configs-agents:` or `qa-playbook-agents:`
-- Auto-generated files (`.md` files dropped by code-review-graph directly into `~/.claude/skills/`) are exempt — skip files, only check directories
-- Flag: directories not in REGISTRY ("unregistered skill"), REGISTRY entries with no directory ("stale entry")
+After fixes are applied, the architecture record (whatever your team
+uses to capture "current state of the agent setup") needs to reflect
+the new reality. Otherwise the next audit starts from a stale
+baseline.
 
-**Check 2 — SKILL.md name frontmatter:**
-- Skill `name:` frontmatter in each SKILL.md should match the directory name
-- Flag: mismatches
+This pass:
 
-Note: `claude-config-push` and `qa-playbook-push` no longer have their own hardcoded skill lists — they read from REGISTRY.yml directly. Do NOT check for list consistency in those files.
+1. Find the existing architecture snapshot drawer / doc
+2. Replace with current state (skill list, MCP config summary,
+   notable structural decisions made today)
+3. Write a diary entry recording what was cleaned
 
-### 6 — Session history and orphan MCP processes
+The closing pass is non-optional. Skipping it is how the audit's
+findings end up in the *next* audit as fresh "stale references."
 
-Two cleanup scripts live in `~/.claude/scripts/`:
+## Hard rules
 
-- `history-cleanup.sh` — trims `hook-approvals.log` to 500 lines, deletes `.jsonl` session logs older than 30 days, removes orphaned subagent dirs.
-- `kill-orphan-mcp.sh` — finds MCP server processes older than 1h (code-review-graph, mempalace, sentry, asana, grafana, gitlab, postgres, chrome-devtools, episodic-memory, infisical run wrappers) that survived their parent session.
+- ✅ Survey → confirm → execute, never auto-fix during survey
+- ✅ Surface zero-finding categories explicitly (`— None ✓`)
+- ✅ Stale detection compares claim location to truth source location
+- ✅ Don't flag historical context (deprecated/renamed/was)
+- ✅ Excludes file for false positives, not regex tweaks
+- ✅ Refresh the architecture snapshot at the end
+- ❌ Never auto-delete during the survey
+- ❌ Never propose dangerous approval rules even if frequent
+- ❌ Never overwrite a `local`-machine-only config (`settings.local.*`
+  or equivalent) — those are intentionally not shared
 
-These run in Step 4 of the workflow below.
+## Anti-patterns
 
----
-
-## Workflow
-
-### Step 1 — Run the audit
-
-Execute checks 1, 1a, 2–5 above. Collect all findings.
-
-### Step 2 — Present findings
-
-Group by category. For each issue show:
-- What was found
-- Where it is (file:line if applicable)
-- Recommended fix (delete / update / rename)
-
-Example format:
-```
-## Stale references (3 issues)
-- ~/.claude/skills/some-skill/SKILL.md:52 — path ~/.claude/skills/old-name/ no longer exists
-
-## Duplicate sources (1 issue)
-- ~/Claude/docs/mcp.md — covers MCP setup already in <project>/CLAUDE.md and MemPalace
-
-## Parasitic directories (0 issues)
-— None found ✓
-```
-
-If nothing found in a category → `— None found ✓`
-
-**Then ask:** "Всё выглядит правильно? Хочешь что-то добавить или пропустить?"
-Wait for confirmation before making any changes.
-
-### Step 3 — Execute confirmed fixes
-
-Apply each fix the user confirmed:
-- Delete files/directories with `rm -rf`
-- Edit SKILL.md/agent files to remove stale references
-- Update README.md rows
-- Update .mcp.json entries
-
-For each change: print what was done (one line per action).
-
-### Step 4 — System cleanup (history + orphan MCPs)
-
-Run the two cleanup scripts. Order: history first (it's silent), then orphan MCPs (interactive).
-
-**4a — History cleanup**
-
-```bash
-bash ~/.claude/scripts/history-cleanup.sh
-```
-
-Report what was trimmed (log file size before/after, number of `.jsonl` removed).
-
-**4b — Orphan MCP processes (dry-run → ask → kill)**
-
-First run dry-run to see what's there:
-
-```bash
-bash ~/.claude/scripts/kill-orphan-mcp.sh
-```
-
-If output says `No orphan MCP processes found` → done, move to Step 5.
-
-If orphans are listed: show the list to the user with sizes/ages, then ask:
-"Убить эти orphan MCP-процессы?"
-
-On confirmation, run with `--kill`:
-
-```bash
-bash ~/.claude/scripts/kill-orphan-mcp.sh --kill
-```
-
-If some processes survive (output says "Killed most. N still alive"), ask:
-"Force-kill оставшиеся (SIGKILL)?" → on yes, run with `--kill -9`.
-
-### Step 5 — Update MemPalace
-
-After fixes are applied, update the architecture drawer in MemPalace:
-1. Delete the existing `wing_claude / config` drawer (search for it first with `mempalace_search`)
-2. Save a fresh drawer with the current state:
-   - Current skill list with publish targets
-   - Current MCP config summary per project
-   - Any notable structural decisions made today
-
-Use `mcp__mempalace__mempalace_diary_write` to log what was cleaned.
-
----
-
-## Notes
-
-- Read files before grepping — don't rely on memory about what's there
-- Don't flag things that are intentionally different (e.g., a `docs/` file that's a WIP the user just created)
-- When in doubt about whether something is a duplicate, ask rather than auto-flag
-- `settings.local.json` is never stale — it's machine-local by design
-- `~/.claude/skills/REGISTRY.yml` is the single source of truth for publish targets — README.md and push skills derive from it
-- When adding a new skill: add it to REGISTRY.yml first, then update README.md to match
+- ❌ Mass-delete on a single user "yes" without per-category
+  confirmation — one wrong category and you've trashed something
+- ❌ Silent zero-finding categories — looks the same as a skipped
+  check
+- ❌ Tweaking regex to dodge a specific false positive — couples the
+  detector to one project's vocabulary
+- ❌ Flagging "was X, now Y" notes as stale — they're documentation
+- ❌ Skipping the closing snapshot refresh — guarantees next audit
+  re-finds the same fixed issues
+- ❌ Bundling unrelated cleanup categories ("cleanup the agent setup")
+  — confirmation discipline only works at the category level

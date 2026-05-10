@@ -1,6 +1,21 @@
 # claude-configs
 
-My personal Claude Code configuration — custom agents, hooks, CLAUDE.md examples, and patterns I use day-to-day. Feel free to adapt anything here.
+A reference snapshot of one Claude Code setup — concrete configs (hooks,
+agents, settings) plus methodology spin-offs of the local working skills.
+Feel free to adapt anything here.
+
+Two kinds of content:
+
+- **Concrete reference** — `settings/settings.json`, `hooks/pre-commit`,
+  `agents/`, `examples/CLAUDE.md` are actual files. Read and adapt to
+  your stack.
+- **Methodology** — `skills/<name>/SKILL.md` describe processes,
+  decision frameworks, and anti-patterns that survive switching to a
+  different agent CLI / MCP stack / memory tool. Tool-agnostic by
+  construction.
+
+See [`CLAUDE.md`](CLAUDE.md) for the methodology pattern (and the
+job-change test that decides what gets a methodology variant).
 
 ## Plugins
 
@@ -194,9 +209,13 @@ The server is always named `mempalace` in each project, so hooks and tool permis
 
 If Claude is launched from any other directory, MemPalace is simply unavailable — by design.
 
-### `CLAUDE.md`
+### `examples/CLAUDE.md`
 
-The **global** `~/.claude/CLAUDE.md` contains:
+A sample of what a global `~/.claude/CLAUDE.md` can contain — the
+concrete instructions file Claude Code auto-loads at session start.
+Adapt to your own setup.
+
+What's in the sample:
 
 - **Memory protocol** — three layers used in parallel at session start (MemPalace + episodic-memory + auto-memory files), each for different lookup needs (facts vs. specific words/commands vs. behavior rules)
 - **Project context separation** — never mix knowledge across projects unless explicitly asked
@@ -206,6 +225,9 @@ The **global** `~/.claude/CLAUDE.md` contains:
 - **Behavioral rules** — pacing, session-continue handling, git privacy for public repos, skill naming convention, avoided phrasing
 - **Behavioral rule scoping** — when saving a new rule, decide cross-project vs. project-specific vs. infrastructure-fact and route to the right file
 - **Superpowers overrides** — exceptions to brainstorming hard-gate for action-oriented skills, memory protocol priority over skill invocation
+
+> The repo's own `CLAUDE.md` (in the root) is a meta-doc about editing
+> this repo, not a sample. Different file, different audience.
 
 ### `agents/`
 
@@ -246,22 +268,33 @@ Two files that extend the hook infrastructure.
 
 ### `skills/`
 
-Slash command skills — invokable with `/skill-name` in any Claude Code session. Each skill defines a multi-step automated workflow that Claude executes inline (with full tool access and context), on demand.
+Methodology spin-offs of the local working skills — process knowledge,
+decision frameworks, anti-patterns. Tool-agnostic; designed to survive
+switching agent CLI / MCP stack / memory tool.
 
-Skills differ from agents: agents are subprocesses dispatched for isolated subtasks; skills run in the main conversation. Use skills for repeatable workflows that need judgment, tool calls, and cross-referencing across multiple data sources.
+These are **reference documents**, not drop-in slash commands. The
+local working versions in `~/.claude/skills/` carry the actual MCP
+calls and paths; here you get the underlying methodology.
 
-**Install:** copy any skill directory to `~/.claude/skills/` — Claude Code auto-discovers them on startup.
+If you want to install one as a working skill in your environment, copy
+the directory and adapt the abstract references to your stack:
+
+```bash
+cp -r skills/claude-cleanup ~/.claude/skills/
+# Then edit ~/.claude/skills/claude-cleanup/SKILL.md to reference your real
+# MCP servers, file paths, tool names, etc.
+```
 
 #### Skills
 
-| Skill | What it does |
+| Skill | What it covers |
 |---|---|
-| `history-cleanup` | Claude Code history cleanup — invoked manually for ad-hoc inspection, also runs automatically on SessionStart (async). Trims `hook-approvals.log` to 500 lines, removes `.jsonl` session logs older than 30 days, removes orphaned subagent dirs, removes project dirs whose worktrees no longer exist, and purges full project state for projects whose cwd no longer exists on disk. |
-| `claude-cleanup` | Audit and clean up the Claude Code setup — find stale skill/agent references, duplicate sources of truth, unnecessary MCP wrappers, parasitic directories (`.cursor/`, `.agents/`), and mismatches in the skills publish registry. Also runs system cleanup: trims old session history and kills orphan MCP processes from crashed sessions. Updates the MemPalace architecture drawer at the end. |
-| `workspace-setup` | One-time project initialization. Configures `.mcp.json` and `.claude/settings.local.json` for MemPalace + episodic-memory, creates project memory files, checks code-review-graph, adds the project to the KG, and writes a diary entry. Automatically picks the right palace strategy: shared palace for sub-projects inside `~/Claude/`, isolated palace for top-level projects. |
-| `claude-audit` | Cross-project Claude tooling audit. Reads MemPalace across all project wings + diary, searches the web for new Claude Code / Anthropic updates, compares against an existing local `IMPROVEMENTS.md`, and writes the updated file with status tracking. Fully automatic — no user input needed. |
-| `claude-config-push` | Syncs `~/.claude/` files to this GitHub repo. Diffs local vs repo, anonymizes private project names, commits only changed files. Handles CLAUDE.md, settings.json, all agents, and public skills. Updates README if content changed. |
-| `tooling-update` | Updates all Claude MCP servers and plugins to their latest versions — MemPalace, code-review-graph, episodic-memory, notebooklm-mcp, and Claude plugins. Shows a before/after version table. Fully autonomous. |
+| `workspace-setup` | One-time project bootstrap methodology — shared vs isolated context decision, phased setup (infrastructure-then-restart-then-content), seed-structure rules for new isolated stores, the index+rules memory file pattern |
+| `claude-cleanup` | Periodic agent-config audit methodology — survey-confirm-execute discipline, truth-source-vs-claim diff for stale-reference detection, duplicate / wrapper / parasitic-dir / approval-log categories |
+| `claude-audit` | Forward-looking "what should I build next?" retro — five proactive lenses (manual reps, agent errors, stuck workarounds, knowledge re-asked, dead capabilities), file-as-state with status lifecycle, internal+external signal cross-check |
+| `history-cleanup` | Session-history rotation methodology — five independent decay axes (approval log, session logs, orphan subagent dirs, worktree-orphan project dirs, dead-cwd projects), survey-confirm-clean phases, manual+hook split |
+| `tooling-update` | Multi-package-manager update methodology — snapshot-update-snapshot pattern, parallel-where-safe vs sequential-where-required, pinned-version awareness, patch re-application reminders |
+| `claude-config-push` | Sync mechanism for this repo. **Being rewritten under the new manual workflow** — until then, the listing here is the prior automation; not yet methodology. |
 
 > **QA skills and agents** (tc-create, tc-gap, bug-dig, etc.) are published separately — see [qa-playbook](https://github.com/anastasiiaanfimova/qa-playbook).
 
