@@ -42,11 +42,6 @@
             "type": "command",
             "command": "episodic-memory sync",
             "async": true
-          },
-          {
-            "type": "command",
-            "command": "bash ~/.claude/scripts/crg-dedup.sh dedup",
-            "async": true
           }
         ]
       }
@@ -84,11 +79,6 @@
           },
           {
             "type": "command",
-            "command": "bash ~/.claude/scripts/crg-dedup.sh orphans",
-            "async": true
-          },
-          {
-            "type": "command",
             "command": "bash ~/.claude/scripts/history-cleanup.sh",
             "async": true
           }
@@ -96,13 +86,11 @@
       }
     ]
   },
-  "statusLine": {
-    "type": "command",
-    "command": "bash \"$HOME/.claude/scripts/statusline.sh\""
-  },
   "enabledPlugins": {
     "warp@claude-code-warp": true,
-    "superpowers@claude-plugins-official": true
+    "superpowers@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true,
+    "hookify@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "claude-code-warp": {
@@ -114,5 +102,5 @@
   },
   "effortLevel": "high",
   "theme": "dark-ansi",
-  "model": "sonnet"
+  "model": "claude-opus-4-7"
 }

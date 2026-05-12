@@ -46,7 +46,7 @@ Since MemPalace captures everything important across sessions, raw `.jsonl` sess
 
 ### `settings/settings.json`
 
-Seven hooks that wire the memory stack, safety layer, and history hygiene into Claude Code:
+Hooks that wire the memory stack, safety layer, and history hygiene into Claude Code:
 
 ```
 UserPromptSubmit → MemPalace session-start hook
@@ -58,9 +58,6 @@ Stop             → MemPalace stop hook (sync)
                    This is how memories actually get saved.
                  → episodic-memory sync (async)
                    Indexes the finished session so it's searchable later.
-                 → crg-dedup.sh dedup (async)
-                   Kills duplicate code-review-graph MCP processes — keeps one
-                   per repo, removes extras left by subagents or parallel sessions.
 
 StopFailure      → MemPalace stop hook (sync, crash path)
                    Same as Stop, but fires when the session ends due to an
@@ -73,9 +70,6 @@ PreCompact       → MemPalace precompact hook (async)
 SessionStart     → code-review-graph check
                    Warns if the codebase graph hasn't been initialized yet.
                    Reminds you to run `code-review-graph build` in new projects.
-                 → crg-dedup.sh orphans (async)
-                   Kills code-review-graph processes orphaned by crashed sessions
-                   (PPID=1). Prevents accumulation across session restarts.
                  → history-cleanup.sh (async)
                    Trims hook-approvals.log, removes .jsonl session logs older
                    than 30 days, removes orphaned subagent dirs and project
@@ -107,21 +101,16 @@ PreToolUse       → [dippy](https://github.com/ldayton/Dippy) (Bash commands)
 > - [#1083](https://github.com/MemPalace/mempalace/issues/1083) — Stop + PreCompact auto-run `mine` with no opt-out
 > - [#1110](https://github.com/MemPalace/mempalace/issues/1110) — feat: split `hooks.auto_save` and `hooks.auto_mine` (config option to disable mine without removing diary saves)
 
-> **code-review-graph process accumulation workaround (as of 2026-05-02):**
+> **code-review-graph: prefer persistent-daemon mode (since 2026-05-08):**
 >
-> When using `code-review-graph serve` with Claude Code's Agent tool, processes accumulate as
-> orphans — each subagent session spawns its own MCP processes, and when the subagent exits its
-> children get reparented to PID 1 instead of being killed. With 3 repos × multiple subagent
-> sessions, 20+ processes can accumulate, consuming ~17% CPU.
+> Stdio `code-review-graph serve` accumulates orphan processes under Claude Code's Agent tool —
+> each subagent spawns its own MCP processes, and when the subagent exits its children get
+> reparented to PID 1 instead of being killed. With several repos × multiple subagent sessions,
+> 20+ processes can accumulate.
 >
-> **Workaround:** two hooks in `settings.json` (included in this config):
-> - `SessionStart → crg-dedup.sh orphans` — kills processes orphaned by crashed sessions (PPID=1)
-> - `Stop → crg-dedup.sh dedup` — keeps one process per repo, kills extras
+> **Recommended setup:** one persistent SSE daemon per repo, wrapped with [`mcp-proxy`](https://github.com/sparfenyuk/mcp-proxy) under a launchd plist (macOS) / systemd unit (Linux). Each project's `.mcp.json` points at the daemon's port via `"type": "sse"`. Each Claude session connects to the existing daemon — no new processes, no orphans.
 >
-> The script lives at `~/.claude/scripts/crg-dedup.sh` (not in this repo — local only).
->
-> Remove the hooks once this is resolved upstream:
-> - [#416](https://github.com/tirth8205/code-review-graph/issues/416) — MCP serve processes accumulate as orphans when used with Claude Code subagents
+> Upstream resolution: [tirth8205/code-review-graph#416](https://github.com/tirth8205/code-review-graph/issues/416) — closed completed when [PR #277](https://github.com/tirth8205/code-review-graph/pull/277) shipped native HTTP transport. The mcp-proxy SSE pattern documented here is one battle-tested deployment; `code-review-graph serve --http` is the simpler equivalent if you don't need the proxy layer.
 
 > **Requirements:** MemPalace installed at `~/.mempalace/`, code-review-graph MCP connected. If you don't use these tools, the hook structure is still a useful reference — swap in your own commands.
 
@@ -264,7 +253,7 @@ Two files that extend the hook infrastructure.
 |------|-------------|
 | `pre-commit` | Global git pre-commit hook — blocks private project names from leaking into public repos. Reads the deny list from `~/.claude/lib/push-mirror/forbidden.txt` (one pattern per line). Runs only for public repos under `anastasiiaanfimova`. |
 
-> **Local-only scripts** (not in this repo): [`statusline.sh`](https://github.com/anastasiiaanfimova/claude-statusline) — populates the status bar; `history-cleanup.sh` — manual history cleanup (invoked via `/history-cleanup` skill); `kill-orphan-mcp.sh` — finds and kills MCP server processes orphaned from crashed sessions; `palace_detect.sh` — lives in `~/.mempalace/`, part of the MemPalace installation.
+> **Local-only scripts** (not in this repo): `history-cleanup.sh` — manual history cleanup (invoked via `/history-cleanup` skill); `kill-orphan-mcp.sh` — finds and kills MCP server processes orphaned from crashed sessions; `palace_detect.sh` — lives in `~/.mempalace/`, part of the MemPalace installation.
 
 ### `skills/`
 
