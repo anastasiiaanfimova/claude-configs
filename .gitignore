@@ -37,4 +37,12 @@ skills/push-config/replacements.md
 !scripts/**
 !examples/
 !examples/**
+!templates/
+!templates/**
+!lib/
+!lib/**
+# keep local-only deny list and target rules out (publish only .example)
+lib/push-mirror/forbidden.txt
+lib/push-mirror/replacements/*
+!lib/push-mirror/replacements/example.md
 hooks/pre-commit.local

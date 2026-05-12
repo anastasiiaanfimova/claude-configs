@@ -1,0 +1,35 @@
+{
+  "_comment": "Example .mcp.json — drop into project root and edit per project. Two patterns shown: MemPalace per-project isolation, code-review-graph stdio. Replace $HOME with actual path or rely on shell expansion.",
+
+  "mcpServers": {
+    "_comment_mempalace": "MemPalace with per-project palace — isolates memory by project so wing names don't collide.",
+    "mempalace": {
+      "command": "$HOME/.mempalace/venv/bin/python3",
+      "args": [
+        "-m",
+        "mempalace",
+        "mcp",
+        "--palace",
+        "$HOME/.<project-slug>/mempalace/palace"
+      ],
+      "type": "stdio",
+      "env": {}
+    },
+
+    "_comment_code_review_graph": "code-review-graph via stdio (simple but processes accumulate under subagents — see README on persistent SSE daemon as the better setup).",
+    "code-review-graph": {
+      "command": "code-review-graph",
+      "args": ["serve"],
+      "type": "stdio",
+      "env": {}
+    },
+
+    "_comment_episodic_memory": "episodic-memory for semantic search across past sessions. Indexed via Stop hook (see settings.json).",
+    "episodic-memory": {
+      "command": "episodic-memory-mcp-server",
+      "type": "stdio",
+      "env": {},
+      "alwaysLoad": true
+    }
+  }
+}
