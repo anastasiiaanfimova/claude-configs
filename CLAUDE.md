@@ -2,7 +2,8 @@
 
 This is the **public clone** of `github.com/anastasiiaanfimova/claude-configs`.
 A reference snapshot of one Claude Code setup — concrete configs (settings,
-hooks, agents) plus methodology spin-offs of the local working skills.
+hooks, agents) plus methodology spin-offs (`examples/CLAUDE.md`, `skills/`)
+that describe transferable patterns.
 
 This is **not** where the live working skills live (those are in
 `~/.claude/skills/`). This is the published artifact, kept around for
@@ -16,9 +17,8 @@ classic dotfiles repo (purely concrete files). It carries both:
 | Concrete reference | Methodology |
 |---|---|
 | `settings/settings.json` | `skills/<name>/SKILL.md` |
-| `hooks/pre-commit` | |
+| `hooks/pre-commit` | `examples/CLAUDE.md` (global-instructions patterns) |
 | `agents/*.md` | |
-| `examples/CLAUDE.md` (sample global instructions) | |
 
 The split mirrors how each kind of content gets reused. Concrete files
 are copy-paste references — someone reads `settings.json` to see what
@@ -28,11 +28,12 @@ what kinds of decay an agent setup accumulates and how to audit it.
 
 ## The methodology pattern (read first if editing skills)
 
-The five skills under `skills/` are **methodology-only**, not blueprints.
+The skills under `skills/` are **methodology-only**, not blueprints.
 They describe processes, decision frameworks, anti-patterns — things
 that survive moving to a different agent CLI, a different MCP stack, a
-different memory tool. No `<placeholder>` syntax for tools, no MCP
-calls, no specific paths.
+different memory tool. The same rule applies to `examples/CLAUDE.md` —
+it's pattern documentation, not a copy-paste config. No `<placeholder>`
+syntax left for tools, no MCP calls, no specific paths.
 
 **User-change test for skills:** every claim in a `SKILL.md` should
 still apply if the reader uses a different agent stack — different MCP
@@ -57,28 +58,18 @@ read and adapt. Don't try to convert them to "methodology of writing
 hooks" — the file IS the documentation. If a hook changes locally,
 update the file here too (manually, no automation).
 
-The `examples/CLAUDE.md` sample is similarly concrete — it shows what a
-global Claude Code instructions file can contain. Update by hand if the
-local global CLAUDE.md genuinely changes shape (memory protocol changes,
-new behavior rules added that other people would benefit from seeing).
-
 ## Editing workflow
 
 1. Decide: methodology or concrete?
-2. **Methodology change** — edit `skills/<name>/SKILL.md` directly
+2. **Methodology change** — edit `skills/<name>/SKILL.md` or
+   `examples/CLAUDE.md` directly
 3. **Concrete change** — edit the relevant file (`settings/`, `hooks/`,
-   `agents/`, `examples/`)
+   `agents/`)
 4. `git add . && git diff --staged` to review
 5. `git commit -m "<msg>"` and `git push`
 
-No automation, no scripts, no `claude-config-push` skill driving things —
-that infra is being retired in favor of this manual workflow. Manual is
-the right level for how often this changes.
-
-> Note: As of this migration, the `claude-config-push` local skill in
-> `~/.claude/skills/` will be rewritten under the new architecture. Until
-> that rewrite lands, **don't invoke `claude-config-push`** — it'll
-> overwrite methodology variants with anonymized copies of local skills.
+No automation, no scripts driving things — manual is the right level
+for how often this changes.
 
 ## Editing principles for skills
 
@@ -99,8 +90,6 @@ the right level for how often this changes.
 - Don't run any of the working skills here (`/claude-audit`,
   `/claude-cleanup`, etc.) — they expect the local stack and will fail
   or produce wrong output
-- Don't reinstate the regex-anonymization push pipeline — it's gone for
-  a reason (fragile coupling between local and public versions)
 
 ## When you'll come back here
 

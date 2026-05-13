@@ -1,204 +1,320 @@
-# Global Claude Instructions
+# Global Claude Instructions — Methodology Example
 
-## Протокол памяти — обязательно в каждой сессии
+This document is a **methodology example** for what a global `CLAUDE.md`
+can look like for a Claude Code setup that uses a persistent memory
+layer. It describes patterns, not a takeable artifact — adapt it to
+your stack (your memory MCP, your project layout, your conventions).
 
-Три слоя памяти — используются по-разному, не по приоритету:
+## Memory Protocol — required every session
 
-| Слой | Инструмент | Что хранит | Когда использовать |
+Three memory layers — different roles, not a priority ordering:
+
+| Layer | Tool family | What it holds | When to reach for it |
 |------|-----------|------------|--------------------|
-| **MemPalace** | `mempalace_*` MCP tools | Дневник, KG, структурированные воспоминания | Факты, решения, люди, проекты |
-| **Episodic memory** | `mcp__episodic-memory__search` | Полный текст прошлых переписок | Конкретные слова, ошибки, команды, детали |
-| **Auto-memory файлы** | `~/.claude/projects/.../memory/*.md` | Правила поведения, фидбек, проектные решения | MEMORY.md загружается автоматически при старте — содержимое применяется всегда; отдельные файлы читать по мере надобности |
+| **Memory palace** (`<memory-mcp>`) | MCP tools like `<memory>_search`, `<memory>_diary_*`, `<memory>_add_drawer` | Diary, knowledge graph, structured drawers | Facts, decisions, people, projects |
+| **Episodic memory** (`<episodic-mcp>`) | Full-text search over past transcripts | Verbatim text from past conversations | Exact words, errors, commands, URLs |
+| **Auto-memory files** | `<auto-memory-dir>/*.md` on disk | Behavioral rules, feedback, project decisions | An index file (e.g. `MEMORY.md`) loads at session start; individual files are read on demand |
 
-### При старте сессии (до первого ответа по существу):
-Запустить параллельно:
-1. `mempalace_status` — получить обзор palace
-2. `mempalace_search` по теме разговора или имени проекта
-3. `mcp__episodic-memory__search` по сегодняшней дате + теме (например `"2026-04-28 <project>"`) — чтобы подхватить сессии за сегодня, у которых ещё нет diary
+### At session start (before the first substantive reply)
 
-### Во время сессии:
-- **Факты, решения, люди, проекты** → `mempalace_search` или `mempalace_kg_query`
-- **Конкретные слова, ошибки, команды, URL из прошлого** → `mcp__episodic-memory__search` сразу, не как fallback
-- **"Что было в сессии где мы делали X"** → оба параллельно
-- Файлы из `memory/` — MEMORY.md уже загружен контекстом; отдельные `.md` читать когда нужны детали правила
+Run in parallel:
 
-### Маршрутизация памяти
+1. `<memory>_status` — palace overview
+2. `<memory>_search` against the conversation topic or project name
+3. `<episodic-mcp>__search` for today's date plus topic — picks up
+   today's earlier sessions that don't have a diary yet
 
-**Принцип:** правила поведения → файлы (auto-loaded), содержимое → search (lookup-on-demand). Правило надо применить **даже если не знаешь что оно есть** → должно быть всегда в контексте. Содержимое нужно когда уже знаешь что искать → search оптимален.
+### During a session
 
-**Запись (когда сохраняешь новое):**
+- **Facts, decisions, people, projects** → palace search / knowledge-graph query
+- **Exact words, errors, commands, URLs from the past** → episodic search
+  immediately (not as a fallback)
+- **"In which session did we do X?"** → both in parallel
+- **Behavioral rules** — already in context via the MEMORY.md index;
+  open individual `.md` files only when the rule's details are needed
 
-| Что | Куда |
+### Memory routing
+
+**Principle:** behavioral rules → files (auto-loaded); content → search
+(lookup-on-demand). A rule must apply **even when you don't know it
+exists** → it needs to be always in context. Content is fetched when
+you already know what you're looking for → search is the right tool.
+
+**Writing — where new content goes:**
+
+| What | Where |
 |-----|------|
-| Cross-project behavioral rule (pacing, naming, общие подходы) | `~/.claude/CLAUDE.md` |
-| Project-specific behavioral rule | `<project-memory>/feedback_X.md` |
-| Project-specific фактическое состояние (статусы, конфиги) | `<project-memory>/project_X.md` |
-| MCP правило / gotcha | MemPalace `tools/<name>.mcp` drawer |
-| Architectural decision | MemPalace `decisions` |
-| Bug investigation | MemPalace `bugs` |
-| Skill trace / output | MemPalace `skills` |
-| Infrastructure (deployment, environments) | MemPalace `infrastructure` |
-| «Сохрани на потом» / discovery | MemPalace `discovery` |
-| Не уверена куда | MemPalace `quick-notes` |
+| Cross-project behavioral rule (pacing, naming, general approach) | Global `CLAUDE.md` |
+| Project-specific behavioral rule | `<project-memory>/feedback_<rule>.md` |
+| Project-specific factual state (statuses, configs) | `<project-memory>/project_<topic>.md` |
+| MCP rule / gotcha | Palace `tools/<name>.mcp` drawer |
+| Architectural decision | Palace `decisions` room |
+| Bug investigation | Palace `bugs` room |
+| Skill trace / output | Palace `skills` room |
+| Infrastructure (deployment, environments) | Palace `infrastructure` room |
+| "Save for later" / discovery | Palace `discovery` room |
+| Don't know where | Palace `quick-notes` room |
 
-**Чтение (когда ищешь):**
+**Reading — where to look:**
 
-| Что нужно | Куда идти |
+| What I need | Where to look |
 |---|---|
-| Правило/feedback | уже в контексте через MEMORY.md — не искать |
-| Факт, решение, MCP gotcha | `mempalace_search` |
-| Конкретные слова/команды/URL из прошлого | `mcp__episodic-memory__search` |
-| «В какой сессии делали X» | оба параллельно |
-| Код: граф связей, callers across files | code-review-graph (если есть в проекте) |
-| Код: имя/символ/функция целиком (AST-aware) | `probe` (CLI через Bash, всегда доступен) |
+| Rule / feedback | Already in context via MEMORY.md — don't search |
+| Fact, decision, MCP gotcha | Palace search |
+| Exact words / commands / URLs from the past | Episodic search |
+| "Which session did X" | Both in parallel |
+| Code: relationship graph, callers across files | Code-graph tool (if the project has one) |
+| Code: exact name / symbol / function (AST-aware) | AST search tool, when available |
 
-**Чек-листы:**
-- Cwd = project, но обсуждение явно cross-project → спросить «для всех проектов или только X?» до записи
-- «Перед/после/каждый раз когда X» → automated trigger, не memory → `update-config` скилл
-- «Разреши/запрети команду», «установи env» → `update-config` скилл
-- Сохранил ранее не туда → предложить migrate
+**Checklists before writing memory:**
 
-**Naming `feedback_*.md`** (примеры ниже — иллюстрации правил именования, не ссылки на реальные файлы):
-- Имя описывает **правило** (что делать), не **subject** (где применять)
+- Cwd = project, but the discussion is explicitly cross-project → ask
+  "for all projects or only X?" before writing
+- "Before / after / every time X happens" → automated trigger, not a
+  memory entry → use a config-update skill
+- "Allow / forbid command", "set env" → config-update skill
+- Filed somewhere wrong earlier → offer to migrate
+
+**Naming `feedback_*.md`:**
+
+- The filename describes the **rule** (what to do), not the **subject**
+  (where it applies)
 - ✓ `feedback_no_estimates_for_other_teams.md`, `feedback_use_skill_templates.md`
-- ✗ `feedback_push_claude_config_zsh.md` — coupled на скилл (skill renamed → файл stale, не заметим)
-- ✗ `feedback_branch_analyze_ui_snapshots.md` — coupled на 2 имени
-- Subject в имени допустим только если subject стабильнее правила (Asana/Notion/ClickHouse — стабильны; имена скилов — нет)
+- ✗ `feedback_push_<tool>_<shell>.md` — coupled to a skill name (skill
+  renamed → file is stale and we won't notice)
+- ✗ `feedback_<skill-a>_<skill-b>.md` — coupled to two names
+- Subject in the name is fine only when the subject is more stable than
+  the rule (TMS / tracker / DB names are stable; skill names are not)
 
-### Дополнение diary через episodic:
-Diary — сжатая AAAK-сводка. Если из неё непонятны детали (что конкретно было, какая команда, какая ошибка):
-→ `mcp__episodic-memory__search` с датой записи + ключевым словом из diary
+### Diary as compressed summary; episodic as fallback for detail
 
-### После системных изменений (сразу, не ждать конца сессии):
+A diary entry is a compressed AAAK-style summary. If you can't tell
+from it what exactly happened (command, error, payload):
+→ episodic search with the diary's date plus a keyword.
 
-Вызвать `mempalace_diary_write` сразу после:
-- правки `CLAUDE.md` (глобального или проектного)
-- правки `settings.json` / `settings.local.json`
-- создания или обновления файлов в `memory/`
-- установки нового хука, скилла, MCP-сервера
+### After structural changes — file immediately, don't wait for session end
 
-### В конце сессии (перед закрытием или компактом):
-- Вызвать `mempalace_diary_write` — записать что произошло, что узнала, что важно
-- После `mempalace_diary_write` финальная фраза — `MemPalace saved.` (не "Можно завершить сессию")
-- Episodic-memory синкается автоматически через Stop хук — вручную не нужно
+Write a diary entry right after:
 
-### Подтверждение при сохранении в MemPalace
+- editing global or project `CLAUDE.md`
+- editing `settings.json` / `settings.local.json`
+- creating or updating files in `<auto-memory-dir>/`
+- installing a new hook, skill, or MCP server
 
-После каждого вызова `mempalace_diary_write`, `mempalace_add_drawer`, `mempalace_update_drawer` — вывести в текст строку-подтверждение:
+### At session end (before close or compact)
+
+- Call `<memory>_diary_write` — record what happened, what was learned,
+  what matters
+- After `<memory>_diary_write` end with a confirmation phrase like
+  `MemPalace saved.` (not "session can be closed")
+- Episodic memory syncs via a Stop hook automatically — no manual call
+
+### Confirmation when writing to the memory palace
+
+After every `<memory>_diary_write`, `<memory>_add_drawer`,
+`<memory>_update_drawer` — print a confirmation line:
 
 ```
-{id} — {краткое описание что записано/обновлено}
+{id} — {brief description of what was written or updated}
 ```
 
-Пример:
-```
-diary_wing_claude_20260511_225613957221 — wing-консолидация исполнена, 31 drawer мигрирован
-drawer_<project>_tools_872896282d96e0cc2b3d4cf5 — обновлён с полной новой структурой
-```
+Goal: the user sees the exact address where the content is stored and
+can hand it to the next chat for continuity.
 
-Цель: пользователь видит точный адрес где лежит сохранённое и может передать его в следующий чат.
+### `agent_name` convention for the diary write
 
-### `agent_name` convention для `mempalace_diary_write`
+`<memory>_diary_write(agent_name=X)` creates wing **`wing_X`** (the
+`wing_` prefix is added automatically). **One project, one
+`agent_name`** — to avoid fragmenting into parallel wings:
 
-`mempalace_diary_write(agent_name=X)` создаёт wing **`wing_X`** (префикс добавляется автоматически). Один проект — один `agent_name`, чтобы не плодить параллельные wings:
-
-| Контекст | `agent_name` | Создаёт wing |
+| Context | `agent_name` | Resulting wing |
 |---|---|---|
-| Глобальный workspace (`~/Claude`, `~/.claude`, все cross-project сессии) | `claude` | `wing_claude` |
-| <project> | `<project>` | `wing_<project>` |
-| hermes | `hermes` | `wing_hermes` |
-| plants | `plants` | `wing_plants` |
-| <project> | `<project>` (legacy — без `wing_` префикса) | `<project>` (см. note ниже) |
+| Global workspace (cross-project sessions) | `claude` | `wing_claude` |
+| Per-project session | `<project>` | `wing_<project>` |
 
-**Не использовать** комбо-имена (`claude-main`, `claude-<project>`, `claude-global`) — они создают фрагментированные wings (`wing_claude-main` и т.п.). История consolidations: main palace 2026-05-11 (6 мини-wings, 31 drawer → `wing_claude`); zen palace 2026-05-13 (4 typo-wings, 816 drawers → `<project>`).
+**Do not use** combo names (`<base>-<modifier>`, `<base>-<model>`) —
+they create fragmented wings that have to be consolidated later.
 
-**Zen legacy exception (важно):** диарийный тул mempalace **ВСЕГДА** прибавляет `wing_` префикс — `mempalace_diary_write(agent_name="<project>")` физически пишет в `wing_<project>`. Чтобы поддерживать `<project>` (no prefix) как canonical, на Stop-хук подключён `~/.claude/scripts/mempalace-normalize-wings.sh`, который после каждой сессии перемещает свежие `wing_<project>` drawer'ы в `<project>`. Если этот скрипт удалить или disable — typo-wing начнёт восстанавливаться при каждом diary write.
+**Legacy exception pattern.** If the project has a historic wing
+without the `wing_` prefix that should remain canonical, the diary tool
+will still add the prefix on every write. To preserve the legacy name,
+wire a Stop hook that moves freshly-written `wing_<project>` drawers
+into the canonical `<project>` wing after each session. If that hook is
+removed, the typo-wing reappears on every diary write.
 
-### Проактивная синхронизация документации
+### Proactive documentation sync
 
-Когда что-то меняется структурно — НЕ ждать запрос пользователя. Сразу обновить документ, который это описывает.
+When something changes structurally — don't wait for the user to ask.
+Update the document that describes it right away.
 
-**In-session trigger (во время работы):** применила workaround / получила unexpected error / обнаружила, что задокументированный способ не работает → в том же ответе написать одну строку о находке и обновить документ. Не откладывать на diary.
+**In-session trigger:** applied a workaround / hit an unexpected error
+/ discovered the documented way doesn't work → in the same response,
+write one line about the finding and update the document. Don't defer
+to diary.
 
-**Перед каждым `mempalace_diary_write`** (включая Stop-hook auto-save мид-сессии, не только в конце) — пройти sweep checklist (7 пунктов) и показать результат пользователю: `Sweep clean.` или `Sweep: [что] → [починила].` Полный checklist + правила + anti-patterns → `feedback_proactive_sync.md`.
+**Before every diary write** (including mid-session Stop-hook
+auto-saves, not only at session end) — run the proactive-sync checklist
+and report the result: `Sweep clean.` or `Sweep: <what> → <fixed>.`
 
-### Quick notes (catch-all)
+### Quick-notes catch-all
 
-Когда не уверена куда положить факт/наблюдение/идею на потом — `mempalace_add_drawer(room="quick-notes")`. Не тратить время на классификацию во время работы. Разбор (перенос в правильный room или удаление устаревшего) — отдельным проходом периодически. Подробности — в `mempalace.mcp` drawer проекта.
+When unsure where to file a fact / observation / idea — drop it into a
+`quick-notes` room in the palace. Don't burn time classifying mid-task.
+A periodic sweep migrates entries to the right rooms or removes stale
+ones.
 
-## Разделение контекстов проектов
+## Project context isolation
 
-Каждый проект — отдельный контекст. Никогда не упоминать и не использовать знания из другого проекта, если пользователь явно не попросил.
+Each project is its own context. Never mention or use knowledge from a
+different project unless the user explicitly asks for it.
 
-## Структура `~/.claude/` — куда что класть
+## `~/.claude/` directory structure
 
-- **`skills/<name>/`** — скиллы (триггерятся по описанию). Служебных скилов с префиксом-маркером не делаем — общая логика живёт в `lib/`.
-- **`agents/`** — агенты (вызываются через Agent tool).
-- **`lib/<topic>/`** — shared helper'ы (скрипты, конфиги, общие данные) для использования из скилов/агентов/хуков. Не triggerятся. Пример: `lib/push-mirror/` — anonymization toolkit (`anon.py` + `forbidden.txt` + `replacements/`), shared между `claude-config-push` и глобальным git pre-commit хуком.
-- **`scripts/`** — однофайловые утилиты-обёртки. Если разрастается или появляются сопутствующие файлы — переезжает в `lib/<topic>/`.
+- **`skills/<name>/`** — skills (triggered by description match). No
+  utility skills with marker prefixes — shared logic lives in `lib/`.
+- **`agents/`** — agents (invoked via the Agent tool).
+- **`lib/<topic>/`** — shared helpers (scripts, configs, data) consumed
+  by skills, agents, hooks. Not triggerable. Example: an anonymization
+  toolkit shared between a publish skill and a git pre-commit hook.
+- **`scripts/`** — single-file utility wrappers. If a script grows or
+  acquires sibling files, it graduates into `lib/<topic>/`.
 
-Правило: helper используется **одним** скилом → лежит внутри директории скила. **Двумя+** → выносится в `lib/<topic>/`.
+**Rule:** a helper used by **one** skill → lives inside that skill's
+directory. Used by **two or more** → moves to `lib/<topic>/`.
 
-## Поиск по коду — приоритет инструментов
+## Code search — tool priority
 
-| Что ищу | Чем |
+| What I'm looking for | Which tool |
 |---|---|
-| Граф связей, "где используется X" через 5 файлов, callers/callees | code-review-graph (если `.code-review-graph/` есть в корне проекта) |
-| Имя/символ/функция целиком, AST-aware lookup, "найди где определён X" | `probe` через Bash (`probe search`, `probe symbols`, `probe extract`) |
-| CRG не установлен / лежит | fallback на `probe` |
-| Чистый regex без понимания структуры | `rg` / `grep` |
+| Relationship graph, "where is X used" across many files, callers / callees | Code-graph tool (if installed in the project) |
+| Exact name / symbol / function, AST-aware lookup | AST CLI (e.g. `probe search`, `probe extract`) — no daemon, parses on demand |
+| Code-graph not installed or stale | Fallback to the AST CLI |
+| Pure regex without needing structure | `rg` / `grep` |
 
-Оба инструмента ходят **ПЕРЕД** Grep/Glob/Read — быстрее, дешевле по токенам, дают структурный контекст.
+Both structural tools run **before** Grep/Glob/Read — faster, cheaper
+in tokens, give structural context.
 
-- CRG: stdio MCP, граф auto-обновляется через хуки. Полные правила → `reference_code_review_graph.md`
-- probe: CLI без демона (нет накопления процессов), парсит на лету через ripgrep+tree-sitter. Полные правила → `reference_probe.md`
+## Engineering principles — always applied
 
-Решение CRG vs probe — пока observation period (с 2026-05-07): фиксировать какие запросы реально требуют графа, а какие закрывает probe.
+Background discipline for every task. Apply when making decisions
+(where to put something, how to structure it, in which order).
 
-## Принципы работы — всегда применять
+- **Multi-pass.** Any non-trivial task — three passes: Pass 1 surface
+  → Pass 2 connections → Pass 3 "what would a critic say about my
+  Pass 1+2?" Finding something in Pass 1 is not a reason to stop.
+- **Meta-pass after a large edit cycle.** Once all detailed passes are
+  done and many small changes are in — final bird's-eye check: "did we
+  break something by aggregate effect while we were buried in
+  details?" Catches file coherence, hidden dependencies, drift, lost
+  capabilities. Separate from a self-critique pass — that one catches
+  gaps in *analysis*; the meta-pass catches regressions in the *final
+  state*.
+- **Reduce-coupling pass.** Triggers: (1) after root cause, (2) after
+  edits across multiple files, (3) when creating a template / capability
+  next to existing ones (80%-test: ≥80% overlap → fold-in, not parallel
+  files). Propose to the user, don't auto-apply.
+- **OOP:** Encapsulation (one thing — one place), Inheritance (shared
+  logic into a base), Polymorphism (one interface, many implementations),
+  Abstraction (hide details behind a clean interface).
+- **Approach checklists:** DRY (no duplication), KISS (the minimum
+  needed), SOLID (for code), BDUF (design non-trivial work before
+  building), SoC (one responsibility per component).
+- **Look at the neighbors.** Starting from zero or unsure of the
+  approach → before a plan, survey analogous patterns already in the
+  system. The shape you find is the default; deviate only where
+  requirements explicitly demand.
+- **Pre-read existing memory before creating a new capability.** New
+  skill / directory / repo / MCP / settings entry / hook → before
+  `Write`/`mkdir`, search memory and re-read the relevant MEMORY.md
+  section. Especially for testing / MCP / config infra.
+- **Build-order rules:**
+  - New project → start with an MVP (one working feature, no full
+    machine). Subsequent features land only after the first one's value
+    is confirmed.
+  - Trying something new (approach, tool, skill, pattern) → PoC first,
+    with go/no-go criteria defined before launch. Don't integrate
+    until the PoC has a verdict.
+  - Order is always: PoC → MVP → iterations.
 
-Эти принципы — фон для любой работы. Применять при принятии решений (что куда положить, как структурировать, в каком порядке). Детали и примеры — в `feedback_engineering_principles.md`.
+## Behavior — always
 
-- **Multi-pass.** Любая нетривиальная задача — 3 прохода: Pass 1 поверхность → Pass 2 связи → Pass 3 «что критик скажет про мой Pass 1+2». Pass 1 нашёл — не повод останавливаться.
-- **Meta-pass (после большого цикла правок).** Когда прошли все детальные pass'ы и сделали много мелких изменений — финальный бёрд-ай: «не сломали ли мы что-то совокупным эффектом, пока копались в деталях?». Проверяет когерентность файлов, скрытые зависимости, drift, потерянные capabilities. Отдельно от Pass-4-self-critique: тот про пропуски в **анализе**, мета-pass про регрессии в **финальном состоянии**.
-- **Reduce-coupling pass.** Триггеры: (1) после root cause, (2) после правок в нескольких файлах, (3) при создании template/capability рядом с существующими (80%-test: ≥80% сходство → fold-in, не parallel files). Предлагать пользователю, не применять автоматически. Полное правило → `feedback_reduce_coupling.md`
-- **OOP:** Encapsulation (одна вещь — одно место), Inheritance (общее → в базу), Polymorphism (один интерфейс под разные реализации), Abstraction (скрыть детали за чистым интерфейсом).
-- **Подходы:** DRY (нет дублирования), KISS (минимум нужного), SOLID (для кода), BDUF (нетривиальное — сначала спроектировать, потом делать), SoC (одна ответственность на компонент).
-- **Смотри на соседей.** Берёшься с нуля или не знаешь как подойти — до плана сначала обзор аналогичного в системе. Если есть `.code-review-graph/` → `get_architecture_overview` + `list_communities` + `semantic_search_nodes`. Иначе → Grep/Read по аналогам. Найденное — дефолтная форма; отклоняйся только там, где требования явно диктуют.
-- **Pre-read existing memory перед созданием новой capability.** Новый skill / директория / репо / MCP / settings entry / hook → до `Write`/`mkdir` сделать `mempalace_search('<имя> OR <категория>')` + перечитать секцию MEMORY.md. Особенно для testing/MCP/config infra. Полное правило → `feedback_pre_read_memory.md`
-- **Реализация — правила:**
-  - Новый проект → стартовать с MVP (одна рабочая фича, без полной машины). Следующие фичи — после подтверждённой пользы первой.
-  - Пробуем что-то новое (подход, тул, скилл, паттерн) → сначала PoC, go/no-go критерии до запуска, не интегрировать до решения.
-  - Порядок всегда: PoC → MVP → итерации.
+Cross-project behavioral rules. Apply in any project, in any session.
 
-## Поведение — всегда
-
-Cross-project поведенческие правила. Применяются в любом проекте, в любой сессии.
-
-- **Темп.** Не торопить пользователя. Не предлагать «идём дальше?», «продолжаем?», «идём на X?» в конце ответа. Темп задаёт пользователь — закончить задачу, показать результат, остановиться.
-- **Продолжение сессии.** Если первое сообщение звучит как «продолжим с...», «продолжаем с #N», «продолжай с...» — сразу `mempalace_diary_read(last_n=1)` и восстанавливать контекст оттуда, не переспрашивать что делали.
-- **Git privacy.** В публичные репозитории — только обезличенные данные. Разрешённые названия проектов в публичных репо: только `hermes`, `claude`. Перед коммитом проверить файлы на email/имена/токены/пути с `/Users/<user>/`/названия приватных проектов/vault'ов/Jira-проектов. Если есть — обезличить (`<placeholder>`) или спросить.
-- **Именование скилов.** Объект-действие (`git-refresh`, `task-create`, `tc-update`), не действие-объект. Группирует скилы по объекту в списке.
-- **Избегаемые слова и выражения.** Список — `feedback_avoid_phrasing.md`. Перед отправкой текста проверить на запрещённые формулировки (например, «стрелять» и производные). При сомнении — спросить.
-- **Git diff перед коммитом.** Перед каждым коммитом показывать пользователю полный diff (`git diff --staged`) и ждать подтверждения.
-- **Push инициирует пользователь.** Не предлагать проактивно сделать коммит или push — даже follow-up «один файл, быстро». Пользователь сам скажет когда пушить. После любых правок просто оставлять локальные изменения как есть и продолжать работу.
-- **Косметика — сразу, без спроса.** Найдена правка которая чисто косметическая (не влияет на функциональность) — мёртвая constant, стилистический outlier, dangling pointer на удалённый файл, опечатка, лишний whitespace и т.п. — фиксить сразу в том же ответе где нашла. Не описывать как «вот находки» и не спрашивать «фиксить?». Тест на «косметика»: если правка ломает поведение скилла/кода — это не косметика, тогда обсудить.
-- **Инцидент не закрывается сам по себе.** «Само рассосалось» — не объяснение, а признак непоиска. У ушедшей проблемы всегда конкретная причина: deploy, фикс провайдера, конфиг, нагрузка, ручное вмешательство. Полное правило → `feedback_incident_root_cause.md`
-- **Не рационализируй после feedback от юзера.** Юзер выбрал B без аргументов («b», «давай B») — применить B, не оправдывать A задним числом. Объяснять выбор только если прямо запросил «почему?». Полное правило → `feedback_no_rationalize.md`
-- **Visibility для долгих процессов (>2 мин).** 6 обязательных механизмов на этапе разработки: stdout live + `_progress.json` + heartbeat + ETA + failure-tolerant + graceful shutdown. Закладывать сразу в TodoWrite, не afterthought. Полное правило → `feedback_visibility_long_runs.md`
-- **MCP signature drift.** На `missing required positional arguments` / `Invalid input` — не доверять памяти, попробовать альтернативы (`content`↔`entry`, `wing_id`↔`wing`, `room_id`↔`room`), оба envelope (`{json:{...}}` vs `{...}`). Один retry — часто закрывает. Полное правило → `feedback_mcp_signature_drift.md`
-- **Environment facts → verify, not infer.** Перед записью факта про окружение пользователя (OS, версия тула, путь, hardware, имя процесса) в публичный артефакт (issue, PR, commit message, README, публичный doc) — один command для проверки (`sw_vers`, `--version`, `uname -a`, `which`, `lsof`). Не считать в уме по формулам (Darwin→macOS, kernel→distro) и не доставать из памяти. Internal draft по памяти — ок; перед push в публичное — verify.
+- **Pacing.** Don't push the user. Don't end a reply with "shall we
+  continue?", "moving on to X?", "ready for Y?". The user sets the
+  pace — finish the task, show the result, stop.
+- **Session continuation.** If the user's first message reads like
+  "let's continue with...", "continue from #N", "carry on with..." —
+  immediately read the latest diary entry and resume context from
+  there. Don't re-ask what was being worked on.
+- **Git privacy.** Public repositories receive only anonymized data.
+  Before commit, scan files for emails / real names / tokens / paths
+  with user home directories / private project names / vault names /
+  tracker project keys. Anonymize (`<placeholder>`) or ask.
+- **Skill naming.** Object-action (`git-refresh`, `task-create`,
+  `tc-update`), not action-object. Groups skills by object in listings.
+- **Forbidden phrasing.** Maintain a list of phrases to avoid; scan
+  drafted text against it before sending.
+- **Show git diff before commit.** Before every commit, show the user
+  the full diff and wait for approval.
+- **No command handoff.** Once a skill has prepared changes, show the
+  diff yourself, propose a commit message, wait for approval, then
+  execute commit and push **yourself**. Don't hand git commands back to
+  the user to copy-paste — you have the tools and the context.
+- **Cosmetic fixes — apply immediately, don't ask.** A purely cosmetic
+  edit (dead constant, stylistic outlier, dangling reference to a
+  removed file, typo, stray whitespace) — fix it in the same response
+  where it was noticed. Don't frame as "I found these — should I fix?".
+  Test for "cosmetic": if the edit changes behavior, it's not cosmetic
+  and warrants discussion.
+- **Incidents don't close by themselves.** "It just resolved" is not an
+  explanation — it's a sign the cause wasn't found. A vanished problem
+  always has a concrete cause: a deploy, a provider fix, a config
+  change, a load drop, a manual intervention. Keep digging.
+- **Don't rationalize after user feedback.** User picked B with no
+  argument ("b", "go with B") — apply B, don't retroactively defend A.
+  Explain the choice only if the user explicitly asks "why?".
+- **Visibility for long-running processes (>2 min).** Six mechanisms
+  designed in during development, not bolted on:
+  stdout live ticks + on-disk `_progress.json` + heartbeat lines +
+  ETA + failure-tolerant per-item handling + graceful shutdown on
+  SIGINT/SIGTERM.
+- **MCP signature drift.** On `missing required positional arguments`
+  / `Invalid input` — don't trust memory of the schema. Retry with
+  alternative parameter names (`content` ↔ `entry`, `wing_id` ↔ `wing`,
+  `room_id` ↔ `room`) and both envelopes (`{json: {...}}` vs `{...}`).
+  One retry often closes it.
+- **Environment facts → verify, not infer.** Before writing a fact
+  about the user's environment (OS, tool version, path, hardware,
+  process name) into a public artifact (issue, PR, commit message,
+  README, public doc) — run one verification command (`sw_vers`,
+  `--version`, `uname -a`, `which`, `lsof`). Don't infer from
+  formulas (kernel → distro) or from memory. Internal drafting from
+  memory is fine; verify before public push.
 
 ## Superpowers — Overrides
 
-Superpowers установлен глобально (scope: user). По правилу самого плагина: **"user instructions always take precedence over superpowers skills"**.
+If a superpowers-style plugin is installed globally, user instructions
+take precedence over its skills (most such plugins document this
+explicitly). Two overrides worth pinning here:
 
-### Gate-скиллы — область применения
+### Gate skills — scope of application
 
-Superpowers gate-скиллы — `brainstorming`, `test-driven-development`, `systematic-debugging`, `verification-before-completion`, `subagent-driven-development` — применяются **только** к скиллам, которые пишут или модифицируют код, схемы, конфиги. Для action-скиллов (создать/обновить Asana-таску, Notion-страницу, Testiny TC, Sentry-комментарий, cleanup, audit, git/config-операции) — без гейтов: они выполняются напрямую. Полный список с контекстом → `feedback_superpowers_overrides.md`.
+Superpowers gate skills — typically `brainstorming`,
+`test-driven-development`, `systematic-debugging`,
+`verification-before-completion`, `subagent-driven-development` —
+apply **only** to skills that write or modify code, schemas, or
+configs. For action skills (create/update a tracker task, post to a
+notebook, run cleanup, run an audit, drive git/config operations) —
+no gate: they execute directly.
 
-### Skill invocation — приоритет
+### Skill invocation — priority
 
-`using-superpowers` требует инвоцировать скиллы "даже при 1% вероятности". Это не отменяет:
-1. **Memory Protocol** — при старте сессии всегда до любых скиллов: `mempalace_status` + `mempalace_search` + `episodic-memory__search` по сегодняшней дате (параллельно)
-2. **Project-specific workflows** — если в CLAUDE.md проекта описан свой процесс, он имеет приоритет над superpowers-скиллами
+"Invoke skills even at 1% probability" does not override:
+
+1. **Memory protocol** — at session start, always before any skill:
+   palace status + palace search + episodic search for today's date, in
+   parallel.
+2. **Project-specific workflows** — if a project's `CLAUDE.md`
+   describes its own process, that takes priority over superpowers
+   skills.

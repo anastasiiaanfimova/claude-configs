@@ -26,41 +26,42 @@ MCP server runs as:
 - Via Claude hooks: cat | ~/.mempalace/venv/bin/python -m mempalace hook run
 ```
 
-## Wings and rooms (current structure)
+## Wings and `agent_name` convention
 
-`agent_name` convention (per global `~/.claude/CLAUDE.md`) — каждый проект имеет один canonical `agent_name`, palace добавляет `wing_` префикс автоматически (исключение: `<project>` — legacy без префикса):
+`mempalace_diary_write(agent_name=X)` creates a wing called `wing_X` — the `wing_` prefix is added automatically. **One project, one `agent_name`** — to avoid fragmenting into parallel wings:
 
-| Контекст | `agent_name` | Wing |
+| Context | `agent_name` | Resulting wing |
 |---|---|---|
-| Global workspace (`~/Claude`, `~/.claude`, cross-project) | `claude` | `wing_claude` |
-| <project> | `<project>` | `wing_<project>` |
-| hermes | `hermes` | `wing_hermes` |
-| plants | `plants` | `wing_plants` |
-| <project> | `<project>` (legacy, без префикса) | `<project>` |
+| Global workspace (cross-project sessions) | `claude` | `wing_claude` |
+| Per-project session | `<project>` | `wing_<project>` |
 
-**Не использовать** комбо-имена (`claude-main`, `claude-<project>`, `claude-code`, `claude-sonnet`) — они создают фрагментированные wings типа `wing_claude-main`, которые потом приходится консолидировать.
+**Do not use** combo names (`<base>-<modifier>`, `<base>-<model>`) — they create fragmented wings that have to be consolidated later.
 
-История consolidations: main palace 2026-05-11 (6 мини-wings, 31 drawer → `wing_claude`); zen palace 2026-05-13 (4 typo-wings, 816 drawers → `<project>`).
+**Legacy-wing exception.** If a project has a historic wing without the `wing_` prefix that should remain canonical, the diary tool will still add the prefix on every write. To preserve the legacy name, wire a Stop hook that moves freshly-written `wing_<project>` drawers into the canonical `<project>` wing after each session. If that hook is removed, the typo-wing reappears on every diary write.
 
-Перед любой работой — `mempalace_status` для актуальных count'ов. Любые wings вне таблицы выше — кандидаты на консолидацию.
+Before any maintenance run — `mempalace_status` for current counts. Any wing outside the convention above is a candidate for consolidation.
 
-OpenClaw decommissioned 2026-04-29 (folder + drawers удалены полностью).
+## Known ChromaDB issues
 
-**ChromaDB 1.5.8 delete bug:** `col.delete(ids=[...])` no-op (Rust bindings регрессия). MCP `mempalace_delete_drawer` возвращает `success: true` но не удаляет. Workaround — прямой SQL DELETE на `chroma.sqlite3`:
+**ChromaDB 1.5.8 `delete` is a no-op** (Rust bindings regression). MCP `mempalace_delete_drawer` returns `success: true` but does not delete. Workaround — direct SQL delete on `chroma.sqlite3`:
+
 ```sql
 BEGIN;
 DELETE FROM embedding_metadata WHERE id IN (SELECT id FROM embeddings WHERE embedding_id IN ('drawer_X', ...));
 DELETE FROM embeddings WHERE embedding_id IN ('drawer_X', ...);
 COMMIT;
 ```
-Проверять backup перед DELETE: `cp ~/.mempalace/palace/chroma.sqlite3 ~/.Trash/chroma-backup-$(date +%Y%m%d).sqlite3`.
+
+Take a backup before any direct DELETE:
+```bash
+cp ~/.mempalace/palace/chroma.sqlite3 ~/.Trash/chroma-backup-$(date +%Y%m%d).sqlite3
+```
 
 ## Python API for bulk operations
 
-**Never delete via UI — always use Python API for bulk ops:**
+**Never delete via UI — always use the Python API for bulk ops:**
 
 ```python
-# Connect to palace
 import chromadb
 client = chromadb.PersistentClient(path="/Users/<user>/.mempalace/palace")
 col = client.get_collection("mempalace_drawers")
@@ -74,7 +75,7 @@ print(wings)
 wing_results = col.get(where={"wing": "wing_to_check"})
 print(f"Count: {len(wing_results['ids'])}")
 
-# Delete entire wing
+# Delete an entire wing (subject to the delete-bug workaround above on affected versions)
 results = col.get(where={"wing": "wing_to_delete"})
 if results["ids"]:
     col.delete(ids=results["ids"])
@@ -90,7 +91,8 @@ old_ids = [
 ]
 ```
 
-**Run Python ops inside venv:**
+**Run Python ops inside the venv:**
+
 ```bash
 ~/.mempalace/venv/bin/python3 << 'EOF'
 import chromadb
@@ -119,15 +121,16 @@ sqlite3 ~/.mempalace/knowledge_graph.sqlite3 \
 ## Audit workflow
 
 When asked to audit the palace:
+
 1. Run `mempalace_status` (via MCP or CLI) to get current counts
-2. List all wings and drawer counts using Python API
-3. Identify: empty wings, wings with 0 meaningful content, duplicate entries
+2. List all wings and drawer counts using the Python API
+3. Identify: empty wings, wings with no meaningful content, duplicate entries
 4. Check KG for orphan facts
 5. Report: what's there, what looks stale, what can be cleaned
 
 ## Common maintenance tasks
 
-**Merge legacy wing into current** — НЕ через delete+reinsert (ломает embeddings + натыкается на ChromaDB delete bug). Использовать in-place metadata update:
+**Merge a legacy wing into a current one** — do **NOT** delete-and-reinsert (breaks embeddings, and trips the ChromaDB delete bug). Use an in-place metadata update:
 
 ```python
 # Migrate all drawers from old wing → new wing (preserves embeddings + IDs)
@@ -138,14 +141,15 @@ for i in range(0, len(results["ids"]), 200):
     col.update(ids=results["ids"][i:i+200], metadatas=new_mds[i:i+200])
 ```
 
-Аналогично для room migration: `{**m, "room": "new_room"}`. После операции — `mempalace_reconnect` через MCP, чтобы palace перечитал.
+The same pattern works for room migration: `{**m, "room": "new_room"}`. After the operation — run `mempalace_reconnect` via MCP so the palace re-reads.
 
-**Clean up a wing after project ends:**
+**Clean up a wing after a project ends:**
+
 ```bash
 ~/.mempalace/venv/bin/python3 -c "
 import chromadb
 client = chromadb.PersistentClient(path='/Users/<user>/.mempalace/palace')
-col = client.get_collection('mempalace')
+col = client.get_collection('mempalace_drawers')
 r = col.get(where={'wing': 'WING_NAME'})
 print(f'Will delete {len(r[\"ids\"])} drawers')
 col.delete(ids=r['ids'])
@@ -154,6 +158,7 @@ print('Done')
 ```
 
 **Check hook health:**
+
 ```bash
 # Verify hooks are configured
 cat ~/.claude/settings.json | python3 -m json.tool | grep -A3 '"Stop"'
@@ -164,7 +169,7 @@ echo '{}' | MEMPALACE_AGENT=claude ~/.mempalace/venv/bin/python ~/.mempalace/hoo
 
 ## What NOT to do
 
-- Don't delete drawers one by one — always bulk delete by wing or filter
-- Don't edit ChromaDB files directly — always use the Python API
+- Don't delete drawers one by one — always bulk-delete by wing or filter
+- Don't edit ChromaDB files directly — always use the Python API (the SQL workaround is only for the documented delete-bug case)
 - Don't delete `wing_claude` diary entries — those are the primary memory
-- Don't delete `wing_<project>` без согласования с пользователем — это активный project workspace
+- Don't delete any active project wing without explicit user confirmation
