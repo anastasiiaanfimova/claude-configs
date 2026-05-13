@@ -22,8 +22,8 @@ what belongs here, see [`CLAUDE.md`](CLAUDE.md).
 | [`examples/CLAUDE.md`](examples/CLAUDE.md) | Methodology example for a global Claude Code instructions file — memory protocol, behavior rules, engineering principles |
 | [`skills/`](skills/) | Methodology essays for individual skills (`workspace-setup`, `claude-cleanup`, `claude-audit`, `history-cleanup`, `tooling-update`) |
 | [`agents/`](agents/) | Agent example files — frontmatter + prompt body, with placeholders for project-specific paths and scopes |
-| [`settings/`](settings/) | Illustrative `settings.json` example showing hook event categories and the shape of a Claude Code config |
-| [`hooks/`](hooks/) | Illustrative global pre-commit hook for blocking private names from leaking to public repos |
+| [`settings/`](settings/) | Illustrative `settings.example.json` showing hook event categories and the shape of a Claude Code config (placeholders for tool-specific commands) |
+| [`hooks/`](hooks/) | Illustrative `pre-commit.example` global git hook for blocking private names from leaking to public repos |
 | [`templates/`](templates/) | Per-language CLAUDE.md skeletons with placeholders |
 | [`lib/push-mirror/`](lib/push-mirror/) | Reference toolkit for an anonymizing publish-mirror pattern |
 
@@ -218,15 +218,18 @@ paths, and tool names.
 
 ## Pre-commit hook
 
-`hooks/pre-commit` is a global git pre-commit hook that blocks private
-project or service names from leaking into public repos. It scans
-staged diffs only for repos under a specific GitHub owner (configured
-in the hook) and only if the remote is public.
+`hooks/pre-commit.example` is a global git pre-commit hook that blocks
+private project or service names from leaking into public repos. It
+scans staged diffs only for repos under a specific GitHub owner
+(configured in the hook via the `OWNER` placeholder) and only if the
+remote is public.
 
-Git never auto-installs hooks on clone — set up once manually:
+Git never auto-installs hooks on clone — set up once manually after
+substituting the placeholder:
 
 ```bash
-cp hooks/pre-commit ~/.git-hooks/pre-commit
+cp hooks/pre-commit.example ~/.git-hooks/pre-commit
+# Edit ~/.git-hooks/pre-commit and set OWNER to your GitHub username/org
 chmod +x ~/.git-hooks/pre-commit
 git config --global core.hooksPath ~/.git-hooks
 ```

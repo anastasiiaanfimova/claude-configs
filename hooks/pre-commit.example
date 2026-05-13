@@ -1,19 +1,22 @@
 #!/bin/bash
 # Global pre-commit hook — blocks private project/service names from leaking into public repos.
 #
+# This is an EXAMPLE file. Rename to `pre-commit` and adapt the OWNER value
+# below to your GitHub username or organization.
+#
 # Install:
-#   cp hooks/pre-commit ~/.git-hooks/pre-commit
+#   cp hooks/pre-commit.example ~/.git-hooks/pre-commit
 #   chmod +x ~/.git-hooks/pre-commit
 #   git config --global core.hooksPath ~/.git-hooks
 #
 # Single source of truth for the deny list:
-#   ~/.claude/lib/push-mirror/forbidden.txt — one regex pattern per line.
+#   ~/.git-hooks/forbidden.txt — one regex pattern per line.
 #   Comments (#) and empty lines are ignored.
 #
 # To add a temporary or permanent forbidden word: edit forbidden.txt directly.
 
 # --- Load scan pattern ---
-FORBIDDEN_FILE="$HOME/.claude/lib/push-mirror/forbidden.txt"
+FORBIDDEN_FILE="$HOME/.git-hooks/forbidden.txt"
 
 [ -f "$FORBIDDEN_FILE" ] || exit 0
 
@@ -21,7 +24,7 @@ PATTERN=$(grep -vE '^\s*(#|$)' "$FORBIDDEN_FILE" | paste -sd '|' -)
 [ -z "$PATTERN" ] && exit 0
 
 # --- Config ---
-OWNER="anastasiiaanfimova"   # only scan repos under this GitHub owner
+OWNER="<github-owner>"   # set to your GitHub username or organization
 
 # --- Check if this is a target repo ---
 REMOTE_URL=$(git remote get-url origin 2>/dev/null)

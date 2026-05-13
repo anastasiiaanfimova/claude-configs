@@ -1,7 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "mcp__mempalace__*",
+      "mcp__<memory-mcp>__*",
       "Read(/tmp/*)",
       "Write(/tmp/*)",
       "Edit(/tmp/*)"
@@ -14,7 +14,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "dippy"
+            "command": "<bash-command-filter>"
           }
         ]
       }
@@ -25,7 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cat | MEMPALACE_PALACE_PATH=$(bash ~/.mempalace/palace_detect.sh) ~/.mempalace/venv/bin/python3 -m mempalace hook run --hook session-start --harness claude-code"
+            "command": "cat | <MEMORY_STORE_ENV>=$(bash ~/<memory-mcp-home>/detect-store.sh) ~/<memory-mcp-home>/bin/<memory-mcp> hook run --hook session-start --harness claude-code"
           }
         ]
       }
@@ -36,16 +36,16 @@
         "hooks": [
           {
             "type": "command",
-            "command": "MEMPALACE_PALACE_PATH=$(bash ~/.mempalace/palace_detect.sh) cat | ~/.mempalace/venv/bin/python3 -m mempalace hook run --hook stop --harness claude-code"
+            "command": "<MEMORY_STORE_ENV>=$(bash ~/<memory-mcp-home>/detect-store.sh) cat | ~/<memory-mcp-home>/bin/<memory-mcp> hook run --hook stop --harness claude-code"
           },
           {
             "type": "command",
-            "command": "~/.claude/scripts/mempalace-normalize-wings.sh",
+            "command": "~/.claude/scripts/<memory-store-normalize>.sh",
             "async": true
           },
           {
             "type": "command",
-            "command": "episodic-memory sync",
+            "command": "<conversation-archive-cli> sync",
             "async": true
           }
         ]
@@ -57,11 +57,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "MEMPALACE_PALACE_PATH=$(bash ~/.mempalace/palace_detect.sh) cat | ~/.mempalace/venv/bin/python3 -m mempalace hook run --hook stop --harness claude-code"
+            "command": "<MEMORY_STORE_ENV>=$(bash ~/<memory-mcp-home>/detect-store.sh) cat | ~/<memory-mcp-home>/bin/<memory-mcp> hook run --hook stop --harness claude-code"
           },
           {
             "type": "command",
-            "command": "~/.claude/scripts/mempalace-normalize-wings.sh",
+            "command": "~/.claude/scripts/<memory-store-normalize>.sh",
             "async": true
           }
         ]
@@ -73,7 +73,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "MEMPALACE_PALACE_PATH=$(bash ~/.mempalace/palace_detect.sh) cat | ~/.mempalace/venv/bin/python3 -m mempalace hook run --hook precompact --harness claude-code",
+            "command": "<MEMORY_STORE_ENV>=$(bash ~/<memory-mcp-home>/detect-store.sh) cat | ~/<memory-mcp-home>/bin/<memory-mcp> hook run --hook precompact --harness claude-code",
             "async": true
           }
         ]
@@ -85,21 +85,21 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'CWD=$(pwd); if ls \"$CWD\" 2>/dev/null | grep -qE \"^(package\\.json|go\\.mod|requirements\\.txt|Cargo\\.toml|pyproject\\.toml|build\\.gradle|\\.git)$\"; then if [ ! -d \"$CWD/.code-review-graph\" ]; then echo \"SETUP NEEDED: code-review-graph not initialized in this project. Run: code-review-graph install --platform claude-code && code-review-graph build\"; fi; fi'"
+            "command": "bash -c 'CWD=$(pwd); if ls \"$CWD\" 2>/dev/null | grep -qE \"^(package\\.json|go\\.mod|requirements\\.txt|Cargo\\.toml|pyproject\\.toml|build\\.gradle|\\.git)$\"; then if [ ! -d \"$CWD/<code-graph-dir>\" ]; then echo \"SETUP NEEDED: <code-graph-tool> not initialized in this project.\"; fi; fi'"
           },
           {
             "type": "command",
-            "command": "bash ~/.claude/scripts/history-cleanup.sh",
+            "command": "bash ~/.claude/scripts/<history-cleanup-script>.sh",
             "async": true
           },
           {
             "type": "command",
-            "command": "bash ~/.claude/scripts/kill-orphan-mcp.sh --kill",
+            "command": "bash ~/.claude/scripts/<orphan-mcp-killer>.sh --kill",
             "async": true
           },
           {
             "type": "command",
-            "command": "bash ~/.claude/scripts/mempalace-issue-1355-check.sh"
+            "command": "bash ~/.claude/scripts/<memory-mcp-health-check>.sh"
           }
         ]
       }
