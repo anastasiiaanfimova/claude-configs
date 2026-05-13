@@ -1,128 +1,118 @@
 # claude-configs
 
-A reference snapshot of one Claude Code setup — concrete configs (hooks,
-agents, settings) plus methodology spin-offs of the local working skills.
-Feel free to adapt anything here.
+A methodology snapshot of one [Claude Code](https://docs.anthropic.com/en/docs/claude-code/overview)
+setup — patterns for skills, agents, settings, hooks, and global
+instructions. Read for the shape of the setup, adapt the bits that fit
+your stack.
 
-Two kinds of content:
+Everything here is **methodology** — patterns and decision frameworks
+that survive moving to a different agent CLI / MCP stack / memory tool.
+Concrete artifacts (`settings/`, `hooks/`, `agents/`, `templates/`,
+`lib/`) are kept as illustrative *examples* with placeholders for
+paths, scopes, and project-specific names — not as copy-paste-and-run
+files.
 
-- **Concrete reference** — `settings/settings.json`, `hooks/pre-commit`,
-  `agents/`, `examples/CLAUDE.md` are actual files. Read and adapt to
-  your stack.
-- **Methodology** — `skills/<name>/SKILL.md` describe processes,
-  decision frameworks, and anti-patterns that survive switching to a
-  different agent CLI / MCP stack / memory tool. Tool-agnostic by
-  construction.
+For the editing principles and the "stack-swap test" that decides
+what belongs here, see [`CLAUDE.md`](CLAUDE.md).
 
-See [`CLAUDE.md`](CLAUDE.md) for the methodology pattern (and the
-job-change test that decides what gets a methodology variant).
+## What's in the repo
+
+| Path | What it is |
+|---|---|
+| [`examples/CLAUDE.md`](examples/CLAUDE.md) | Methodology example for a global Claude Code instructions file — memory protocol, behavior rules, engineering principles |
+| [`skills/`](skills/) | Methodology essays for individual skills (`workspace-setup`, `claude-cleanup`, `claude-audit`, `history-cleanup`, `tooling-update`) |
+| [`agents/`](agents/) | Agent example files — frontmatter + prompt body, with placeholders for project-specific paths and scopes |
+| [`settings/`](settings/) | Illustrative `settings.json` example showing hook event categories and the shape of a Claude Code config |
+| [`hooks/`](hooks/) | Illustrative global pre-commit hook for blocking private names from leaking to public repos |
+| [`templates/`](templates/) | Per-language CLAUDE.md skeletons with placeholders |
+| [`lib/push-mirror/`](lib/push-mirror/) | Reference toolkit for an anonymizing publish-mirror pattern |
 
 ## Plugins
 
-[Superpowers](https://github.com/obra/superpowers) is installed globally (scope: user). It adds structured workflows for brainstorming, planning, TDD, debugging, code review, and git worktrees — available in every project without any per-project config.
+[Superpowers](https://github.com/obra/superpowers) is installed
+globally (scope: user). It adds structured workflows for brainstorming,
+planning, TDD, debugging, code review, and git worktrees — available
+in every project without per-project config. Skills are invoked as
+`superpowers:<skill-name>` (e.g. `superpowers:brainstorming`).
 
-Superpowers skills are invoked with `superpowers:<skill-name>` (e.g. `superpowers:brainstorming`, `superpowers:systematic-debugging`). See the plugin repo for the full list.
+## Memory stack pattern
 
----
-
-## Memory stack
-
-This setup layers four independent memory systems on top of Claude Code. Each solves a different problem:
+This setup layers four independent memory systems on top of Claude
+Code. Each solves a different problem; none overlap.
 
 | Layer | Tool | What it remembers |
 |-------|------|-------------------|
 | **Cross-session agent memory** | [MemPalace](https://github.com/MemPalace/mempalace) | Who the user is, project context, feedback, preferences — persists across sessions in a diary + knowledge graph |
-| **Conversation search** | [episodic-memory](https://github.com/obra/episodic-memory) | Full-text index of past Claude Code sessions — searchable by topic, code, or question. Synced at session end. |
-| **Codebase structure** | [code-review-graph](https://github.com/tirth8205/code-review-graph) | Functions, classes, call relationships, imports — parsed from source with Tree-sitter, queryable as a graph |
+| **Conversation search** | [episodic-memory](https://github.com/obra/episodic-memory) | Full-text index of past sessions — searchable by topic, code, or question. Synced at session end. |
+| **Codebase structure** | [code-review-graph](https://github.com/tirth8205/code-review-graph) | Functions, classes, call relationships, imports — parsed with Tree-sitter, queryable as a graph |
 | **In-project notes** | Claude Code built-in auto-memory | Markdown files in `~/.claude/projects/*/memory/` — facts Claude saves during sessions |
 
-> Contributed the high-water-mark fix for incremental indexing of appended exchanges in episodic-memory ([PR #85](https://github.com/obra/episodic-memory/pull/85)) — [shipped in v1.1.0](https://github.com/obra/episodic-memory/releases/tag/v1.1.0).
+The split: MemPalace is about the agent knowing the user;
+episodic-memory is a searchable archive of raw conversation history;
+code-review-graph is about knowing the codebase; auto-memory is an
+in-project scratchpad.
 
-None of these overlap: MemPalace is about the agent knowing the user, episodic-memory is a searchable archive of raw conversation history, code-review-graph is about knowing the codebase, auto-memory is about in-project scratchpad facts.
+Since MemPalace captures everything important across sessions, raw
+`.jsonl` session logs are disk clutter. A `history-cleanup` script
+runs automatically on SessionStart (async, no slowdown) — prunes logs
+older than 30 days, removes orphaned subagent dirs, and clears project
+state for worktrees that no longer exist.
 
-Since MemPalace captures everything important across sessions, raw `.jsonl` session logs are just disk clutter. The `history-cleanup` script runs automatically on SessionStart (async, no slowdown) — prunes logs older than 30 days, removes orphaned subagent dirs, and clears project state for worktrees that no longer exist. Invoke `/history-cleanup` manually for ad-hoc inspection or extra-aggressive cleanup. The `memory/` directory is always preserved.
+> Patterns to watch for if you wire similar tooling: an MCP server that
+> spawns sub-processes on every hook can starve CPU; a stdio MCP server
+> can orphan processes under nested agent invocations. Prefer
+> persistent-daemon mode (SSE / HTTP) for any MCP that's used heavily.
 
-## What's inside
+## Hooks wired in this setup
 
-### `settings/settings.json`
-
-Hooks that wire the memory stack, safety layer, and history hygiene into Claude Code:
+The shape of `settings/settings.json` — what events get hooked and why:
 
 ```
-UserPromptSubmit → MemPalace session-start hook
-                   Initializes session tracking state so the stop hook knows
-                   how many exchanges have occurred.
+UserPromptSubmit → memory-MCP session-start (initializes session tracking
+                   so the stop hook knows how many exchanges have occurred)
 
-Stop             → MemPalace stop hook (sync)
-                   Claude writes a diary entry + KG facts at end of session.
-                   This is how memories actually get saved.
-                 → episodic-memory sync (async)
-                   Indexes the finished session so it's searchable later.
+Stop             → memory-MCP stop (sync) — writes diary entry + KG facts
+                 → conversation-archive sync (async) — indexes the finished
+                   session so it's searchable later
 
-StopFailure      → MemPalace stop hook (sync, crash path)
-                   Same as Stop, but fires when the session ends due to an
-                   API error (rate limit, auth failure, etc.).
+StopFailure      → memory-MCP stop (sync, crash path) — same as Stop, but
+                   fires when the session ends due to an API error
+                   (rate limit, auth failure, etc.)
 
-PreCompact       → MemPalace precompact hook (async)
-                   Fires before context compaction so in-progress session
-                   content can be saved before detailed context is lost.
+PreCompact       → memory-MCP precompact (async) — saves in-progress
+                   session content before context compaction discards detail
 
-SessionStart     → code-review-graph check
-                   Warns if the codebase graph hasn't been initialized yet.
-                   Reminds you to run `code-review-graph build` in new projects.
-                 → history-cleanup.sh (async)
-                   Trims hook-approvals.log, removes .jsonl session logs older
-                   than 30 days, removes orphaned subagent dirs and project
-                   dirs whose worktrees no longer exist.
+SessionStart     → code-graph init check — warns if the codebase graph
+                   isn't initialized yet
+                 → history-cleanup (async) — trims approval log, prunes
+                   old session logs, removes orphan dirs
 
-PreToolUse       → [dippy](https://github.com/ldayton/Dippy) (Bash commands)
-                   AST-based approval filter for shell commands. Auto-approves
-                   safe read-only and standard dev commands; blocks destructive
-                   ones; prompts for anything in between. Configured via
-                   ~/.dippy/config. Install: brew tap ldayton/dippy && brew install dippy
+PreToolUse       → AST-based shell command filter (e.g. dippy) — auto-approves
+                   safe read-only commands, blocks destructive ones, prompts
+                   for anything in between
 ```
 
-> **MemPalace workarounds (as of v3.3.1 stable, 2026-04-29):**
->
-> All seven hooks are active. The `mine` (indexing) sub-process is disabled via a local venv patch —
-> all hooks run normally and diary saves work, but `mempalace mine` is never spawned.
->
-> **Why:** `mine --mode convos` scans the entire session directory (100+ JSONL files) on every
-> Stop hook, consuming 90–200% CPU for minutes at a time. Even with a PID guard, the next Stop
-> fires a new `mine` as soon as the old one finishes. Diary saves (`_save_diary_direct`) are
-> unaffected — they use a separate code path and always complete.
->
-> **Local patch applied** to `~/.mempalace/venv/.../mempalace/hooks_cli.py` —
-> `_maybe_auto_ingest()` and `_mine_sync()` are made no-ops (return immediately with a log line).
-> **This patch is lost on `pip install mempalace`** — re-apply after every upgrade.
->
-> Relevant open issues — remove the patch once these are resolved upstream:
-> - [#1212](https://github.com/MemPalace/mempalace/issues/1212) — Stop hook spawns concurrent `mine` processes that bypass PID guard
-> - [#1083](https://github.com/MemPalace/mempalace/issues/1083) — Stop + PreCompact auto-run `mine` with no opt-out
-> - [#1110](https://github.com/MemPalace/mempalace/issues/1110) — feat: split `hooks.auto_save` and `hooks.auto_mine` (config option to disable mine without removing diary saves)
+If you don't use these specific tools, the hook structure is still a
+useful reference — swap in your own commands.
 
-> **code-review-graph: prefer persistent-daemon mode (since 2026-05-08):**
->
-> Stdio `code-review-graph serve` accumulates orphan processes under Claude Code's Agent tool —
-> each subagent spawns its own MCP processes, and when the subagent exits its children get
-> reparented to PID 1 instead of being killed. With several repos × multiple subagent sessions,
-> 20+ processes can accumulate.
->
-> **Recommended setup:** one persistent SSE daemon per repo, wrapped with [`mcp-proxy`](https://github.com/sparfenyuk/mcp-proxy) under a launchd plist (macOS) / systemd unit (Linux). Each project's `.mcp.json` points at the daemon's port via `"type": "sse"`. Each Claude session connects to the existing daemon — no new processes, no orphans.
->
-> Upstream resolution: [tirth8205/code-review-graph#416](https://github.com/tirth8205/code-review-graph/issues/416) — closed completed when [PR #277](https://github.com/tirth8205/code-review-graph/pull/277) shipped native HTTP transport. The mcp-proxy SSE pattern documented here is one battle-tested deployment; `code-review-graph serve --http` is the simpler equivalent if you don't need the proxy layer.
+## Credential-management pattern
 
-> **Requirements:** MemPalace installed at `~/.mempalace/`, code-review-graph MCP connected. If you don't use these tools, the hook structure is still a useful reference — swap in your own commands.
+API keys and tokens never go into shell files (`~/.zshrc`, `~/.zshenv`)
+or `.env` files. Instead they live in
+[Infisical](https://infisical.com) — a secrets manager with CLI
+injection.
 
-## Credential management
+**Why over env files:** env files get committed by accident, end up in
+logs, and leak through shell history. Infisical stores secrets
+centrally (cloud or self-hosted) and injects them per-command into the
+process environment only.
 
-API keys and tokens never go into shell files (`~/.zshrc`, `~/.zshenv`) or `.env` files. Instead they live in [Infisical](https://infisical.com) — a secrets manager with CLI injection.
+### Shape of the integration
 
-**Why Infisical instead of env files:** env files get committed by accident, end up in logs, and leak through shell history. Infisical stores secrets centrally (cloud or self-hosted) and injects them per-command into the process environment only.
-
-### How it works
-
-Secrets are grouped into projects and folders (e.g. `Personal/myproject/`, `Work/clientA/`). CLI auth uses a **machine identity** (Universal Auth) — Client ID + Client Secret stored in the macOS Keychain, exchanged for a fresh access token on every run so the session never expires.
+Secrets are grouped into projects and folders (e.g.
+`<scope>/<project>/`). CLI auth uses a **machine identity** (Universal
+Auth) — Client ID + Client Secret stored in the OS keychain, exchanged
+for a fresh access token on every run.
 
 A shell helper fetches the token:
 
@@ -137,174 +127,103 @@ _infisical_token() {
 }
 ```
 
-Then run Claude with secrets injected as env vars:
-
-```bash
-INFISICAL_TOKEN=$(_infisical_token) infisical run \
-  --projectId="$INFISICAL_PROJECT_WORK" --path="/myproject" -- claude
-```
-
-### Smart shell function
-
-A `claude()` function in `~/.zshrc` auto-detects the project from `pwd` and injects the right folder:
+A wrapper function in `~/.zshrc` auto-detects the project from `pwd`
+and injects the right folder:
 
 ```bash
 claude() {
   case "$PWD" in
-    $HOME/ProjectA*) INFISICAL_TOKEN=$(_infisical_token) infisical run \
-      --projectId="$INFISICAL_PROJECT_WORK" --path="/projectA" -- command claude "$@" ;;
-    $HOME/Claude/mytool*) INFISICAL_TOKEN=$(_infisical_token) infisical run \
-      --projectId="$INFISICAL_PROJECT_PERSONAL" --path="/mytool" -- command claude "$@" ;;
+    $HOME/<project-a>*) INFISICAL_TOKEN=$(_infisical_token) infisical run \
+      --projectId="$INFISICAL_PROJECT_ID" --path="/<project-a>" -- command claude "$@" ;;
+    $HOME/<project-b>*) INFISICAL_TOKEN=$(_infisical_token) infisical run \
+      --projectId="$INFISICAL_PROJECT_ID" --path="/<project-b>" -- command claude "$@" ;;
     *) command claude "$@" ;;
   esac
 }
 ```
 
-Folders outside the match list run plain `claude` without injection. Explicit aliases (`claude-projecta`, `claude-mytool`) cover cases where you want a specific context from any directory.
+Directories outside the match list run plain `claude` without
+injection. The global `CLAUDE.md` instructs Claude to never save API
+keys to shell files — always offer to add them to the right
+Infisical project/folder instead.
 
-### Adding secrets
+## MCP project-isolation pattern
 
-```bash
-infisical secrets set --projectId="$INFISICAL_PROJECT_WORK" \
-  --path="/myproject" KEY=value
-```
-
-### CLAUDE.md enforces the rule
-
-The global `CLAUDE.md` instructs Claude to never save API keys to shell files — always offer to add them to the right Infisical project/folder instead. Even if the user asks Claude to "save this token", Claude will redirect to Infisical.
-
-## MCP project isolation
-
-MemPalace is configured **per project** via `.mcp.json`, not globally. Claude running in a project directory only sees memories for that project — no cross-contamination.
+A memory MCP can be configured **per project** via `.mcp.json` rather
+than globally. Claude running in a project directory then only sees
+memories for that project — no cross-contamination.
 
 Two tiers of isolation:
 
-**Shared palace** — sub-projects inside `~/Claude/` share a single palace. No `--palace` flag; `palace_detect.sh` walks up the directory tree to find the nearest `.mcp.json` and falls back to `~/.mempalace/palace`.
+**Shared store** — sub-projects inside a common workspace share a
+single backing store. No `--store` flag; the MCP entry walks up to find
+the nearest `.mcp.json` and falls back to a default store path.
 
 ```
-~/Claude/.mcp.json           → mempalace (no --palace) → ~/.mempalace/palace
-~/Claude/<project>/.mcp.json → mempalace (no --palace) → ~/.mempalace/palace  (inherits)
-~/Claude/hermes/.mcp.json    → mempalace (no --palace) → ~/.mempalace/palace  (inherits)
+~/Workspace/.mcp.json             → memory-mcp                    → ~/.memory-mcp/default
+~/Workspace/<sub-project>/.mcp.json → memory-mcp                  → ~/.memory-mcp/default (inherits)
 ```
 
-**Separate palace** — top-level independent projects each get their own isolated palace:
+**Separate store** — top-level independent projects each get their
+own isolated store:
 
 ```
-~/Hermes/.mcp.json     → mempalace --palace ~/.hermes/mempalace
-~/MyProject/.mcp.json  → mempalace --palace ~/.myproject/mempalace
+~/<project-a>/.mcp.json → memory-mcp --store ~/.memory-mcp/<project-a>
+~/<project-b>/.mcp.json → memory-mcp --store ~/.memory-mcp/<project-b>
 ```
 
-The server is always named `mempalace` in each project, so hooks and tool permissions (`mcp__mempalace__*`) are identical everywhere. The `/workspace-setup` command automatically picks the right tier based on whether the current directory is inside `~/Claude/`.
+The server name stays consistent in each project, so hooks and tool
+permissions (`mcp__<server>__*`) are identical everywhere.
 
-If Claude is launched from any other directory, MemPalace is simply unavailable — by design.
+If Claude is launched from any other directory, the memory MCP is
+simply unavailable — by design.
 
-### `examples/CLAUDE.md`
+## Agents
 
-A sample of what a global `~/.claude/CLAUDE.md` can contain — the
-concrete instructions file Claude Code auto-loads at session start.
-Adapt to your own setup.
-
-What's in the sample:
-
-- **Memory protocol** — three layers used in parallel at session start (MemPalace + episodic-memory + auto-memory files), each for different lookup needs (facts vs. specific words/commands vs. behavior rules)
-- **Project context separation** — never mix knowledge across projects unless explicitly asked
-- **Credential management** — API keys and tokens never go to shell files, always Infisical
-- **code-review-graph** — generic instructions on using the graph tools before falling back to Grep/Glob/Read in any project that has `.code-review-graph/` initialized
-- **Engineering principles** — multi-pass discipline, OOP (Encapsulation/Inheritance/Polymorphism/Abstraction), DRY/KISS/SOLID/BDUF/SoC, PoC→MVP rollout
-- **Behavioral rules** — pacing, session-continue handling, git privacy for public repos, skill naming convention, avoided phrasing
-- **Behavioral rule scoping** — when saving a new rule, decide cross-project vs. project-specific vs. infrastructure-fact and route to the right file
-- **Superpowers overrides** — exceptions to brainstorming hard-gate for action-oriented skills, memory protocol priority over skill invocation
-
-> The repo's own `CLAUDE.md` (in the root) is a meta-doc about editing
-> this repo, not a sample. Different file, different audience.
-
-### `agents/`
-
-Custom subagents for specialized tasks. Drop any of these into `~/.claude/agents/` and Claude Code will route to them automatically.
-
-#### Claude Code setup
-
-Agents for managing the local Claude Code environment. Built-in agents from Claude Code; `release-manager` and `docker-debugger` have project-specific context baked in.
+Agent files combine a frontmatter (name, description, tools, model,
+optional MCP servers) with a prompt body. Drop any of these into
+`~/.claude/agents/` and Claude Code routes to them automatically.
 
 | Agent | What it does | Model |
-|-------|-------------|-------|
-| `ai-researcher` | Latest AI news digest — model releases, research papers, industry moves. | haiku |
-| `bash-scripter` | Writes and fixes bash/shell scripts — entrypoints, automation, setup scripts. | sonnet |
-| `docker-debugger` | Diagnoses Docker containers that crash, restart, or fail healthchecks. Knows the Infisical + Docker Compose patterns used in this setup. | sonnet |
-| `release-manager` | npm publish, GitHub releases, changelog, git tags. Configured for the npm publish workflow on macOS. | sonnet |
-| `mempalace-admin` | MemPalace maintenance — auditing palace contents, cleanup, KG health. | sonnet |
-| `security-auditor` | Audits REST API and web apps for security vulnerabilities — auth bypasses, broken access control, injection, insecure configs. QA-focused, not compliance auditing. | sonnet |
+|-------|--------------|-------|
+| `ai-researcher` | Latest AI news digest — model releases, research papers, industry moves | haiku |
+| `bash-scripter` | Writes and fixes bash/shell scripts — entrypoints, automation, setup scripts | sonnet |
+| `docker-debugger` | Diagnoses Docker containers that crash, restart, or fail healthchecks. Knows secrets-manager + Docker Compose patterns | sonnet |
+| `release-manager` | npm publish, GitHub releases, changelog, git tags | sonnet |
+| `mempalace-admin` | MemPalace maintenance — auditing palace contents, cleanup, KG health | sonnet |
+| `security-auditor` | Audits REST API and web apps for security vulnerabilities — QA-focused, not compliance auditing | sonnet |
 
-> **QA agents** (test-architect, e2e-tester, bug-reporter, etc.) are published separately — see [qa-playbook](https://github.com/anastasiiaanfimova/qa-playbook).
+> **QA agents** (test-architect, e2e-tester, bug-reporter, etc.) are
+> published separately — see
+> [qa-playbook](https://github.com/anastasiiaanfimova/qa-playbook).
 
-#### Side projects
+## Skills
 
-Agents for separate self-hosted projects. These are **project-scoped** — not in `~/.claude/agents/` globally, but placed in `.claude/agents/` inside the specific project directory. This keeps them out of unrelated contexts.
+Methodology essays — process knowledge, decision frameworks,
+anti-patterns. Tool-agnostic; designed to survive switching agent CLI /
+MCP stack / memory tool.
 
-| Agent | What it does | Model |
-|-------|-------------|-------|
-| `hermes-admin` | [Hermes](https://github.com/anastasiiaanfimova/hermes-docker) config — Docker setup, channels, Infisical secrets, entrypoint debugging. | sonnet |
-
-### `hooks/`
-
-Two files that extend the hook infrastructure.
-
-| File | What it does |
-|------|-------------|
-| `pre-commit` | Global git pre-commit hook — blocks private project names from leaking into public repos. Reads the deny list from `~/.claude/lib/push-mirror/forbidden.txt` (one pattern per line). Runs only for public repos under `anastasiiaanfimova`. |
-
-> **Local-only scripts** (not in this repo): `history-cleanup.sh` — manual history cleanup (invoked via `/history-cleanup` skill); `kill-orphan-mcp.sh` — finds and kills MCP server processes orphaned from crashed sessions; `palace_detect.sh` — lives in `~/.mempalace/`, part of the MemPalace installation.
-
-### `skills/`
-
-Methodology spin-offs of the local working skills — process knowledge,
-decision frameworks, anti-patterns. Tool-agnostic; designed to survive
-switching agent CLI / MCP stack / memory tool.
-
-These are **reference documents**, not drop-in slash commands. The
-local working versions in `~/.claude/skills/` carry the actual MCP
-calls and paths; here you get the underlying methodology.
-
-If you want to install one as a working skill in your environment, copy
-the directory and adapt the abstract references to your stack:
-
-```bash
-cp -r skills/claude-cleanup ~/.claude/skills/
-# Then edit ~/.claude/skills/claude-cleanup/SKILL.md to reference your real
-# MCP servers, file paths, tool names, etc.
-```
-
-#### Skills
+These are **reference documents**, not drop-in slash commands. To
+adapt one as a working skill in your environment, copy the directory
+and replace the abstract references with your real MCP servers, file
+paths, and tool names.
 
 | Skill | What it covers |
 |---|---|
-| `workspace-setup` | One-time project bootstrap methodology — shared vs isolated context decision, phased setup (infrastructure-then-restart-then-content), seed-structure rules for new isolated stores, the index+rules memory file pattern |
-| `claude-cleanup` | Periodic agent-config audit methodology — survey-confirm-execute discipline, truth-source-vs-claim diff for stale-reference detection, duplicate / wrapper / parasitic-dir / approval-log categories |
+| `workspace-setup` | One-time project bootstrap methodology — shared vs isolated context decision, phased setup, seed-structure rules for new isolated stores, the index+rules memory file pattern |
+| `claude-cleanup` | Periodic agent-config audit methodology — survey-confirm-execute discipline, truth-source-vs-claim diff for stale-reference detection, duplicate / wrapper / parasitic-dir categories |
 | `claude-audit` | Forward-looking "what should I build next?" retro — five proactive lenses (manual reps, agent errors, stuck workarounds, knowledge re-asked, dead capabilities), file-as-state with status lifecycle, internal+external signal cross-check |
-| `history-cleanup` | Session-history rotation methodology — five independent decay axes (approval log, session logs, orphan subagent dirs, worktree-orphan project dirs, dead-cwd projects), survey-confirm-clean phases, manual+hook split |
-| `tooling-update` | Multi-package-manager update methodology — snapshot-update-snapshot pattern, parallel-where-safe vs sequential-where-required, pinned-version awareness, patch re-application reminders, pre-flight upstream-issue scan (catch "this release broke X" before installing), hard gate on known critical OS-specific regressions |
+| `history-cleanup` | Session-history rotation methodology — five independent decay axes, survey-confirm-clean phases, manual+hook split |
+| `tooling-update` | Multi-package-manager update methodology — snapshot-update-snapshot pattern, parallel-where-safe vs sequential-where-required, pinned-version awareness, pre-flight upstream-issue scan |
 
-> **QA skills and agents** (tc-create, tc-gap, bug-dig, etc.) are published separately — see [qa-playbook](https://github.com/anastasiiaanfimova/qa-playbook).
+## Pre-commit hook
 
-## How to use
+`hooks/pre-commit` is a global git pre-commit hook that blocks private
+project or service names from leaking into public repos. It scans
+staged diffs only for repos under a specific GitHub owner (configured
+in the hook) and only if the remote is public.
 
-**Agents** — copy any agent file to `~/.claude/agents/`:
-```bash
-cp agents/bug-reporter.md ~/.claude/agents/
-```
-
-**`/workspace-setup` skill** — copy to `~/.claude/skills/workspace-setup/`:
-```bash
-mkdir -p ~/.claude/skills/workspace-setup
-cp skills/workspace-setup/SKILL.md ~/.claude/skills/workspace-setup/
-```
-Then run `/workspace-setup` from any new project directory.
-
-Copy what's useful, adjust paths to your setup. [Claude Code hooks docs](https://docs.anthropic.com/en/docs/claude-code/hooks)
-
-**Pre-commit hook** — `hooks/pre-commit` is a global hook that blocks private project or service names from leaking into public repos. It checks staged diffs only for repos under your GitHub owner, and only if they're public.
-
-Git never auto-installs hooks on clone — you need to set this up once manually:
+Git never auto-installs hooks on clone — set up once manually:
 
 ```bash
 cp hooks/pre-commit ~/.git-hooks/pre-commit
@@ -312,16 +231,38 @@ chmod +x ~/.git-hooks/pre-commit
 git config --global core.hooksPath ~/.git-hooks
 ```
 
-The hook reads its deny list from a single source: `~/.claude/lib/push-mirror/forbidden.txt` (one regex pattern per line; comments allowed). If the file doesn't exist, the hook silently exits — so you must create it before this hook protects anything:
+The hook reads its deny list from `~/.git-hooks/forbidden.txt` (one
+regex pattern per line; comments allowed). If the file doesn't exist,
+the hook silently exits — create it before relying on protection:
 
 ```bash
-mkdir -p ~/.claude/lib/push-mirror
-cat > ~/.claude/lib/push-mirror/forbidden.txt <<'EOF'
+cat > ~/.git-hooks/forbidden.txt <<'EOF'
 # One pattern per line. Case-insensitive (hook uses grep -iE).
-myproject
-internal-service
-vault-name
+<private-project-a>
+<internal-service>
+<vault-name>
 EOF
 ```
 
-To add or remove a forbidden word later, just edit `forbidden.txt` directly.
+## How to adapt
+
+Methodology repos work best when you treat them as starting points:
+
+- Pick the agent, skill, or pattern you want
+- Copy the file into your local setup
+- Replace placeholders (`<project>`, `<scope>`, `<server>`, etc.)
+  with your real names
+- Adapt the prompt or workflow to your actual MCP servers, tools, and
+  conventions
+
+For agents and skills, the methodology file describes *the shape* of
+the work; you fill in the specifics. For settings and hooks, the
+example shows *the structure*; you bring your own commands.
+
+[Claude Code hooks docs](https://docs.anthropic.com/en/docs/claude-code/hooks)
+
+## Related public repo
+
+[`qa-playbook`](https://github.com/anastasiiaanfimova/qa-playbook) —
+methodology snapshots of QA skills. Adopted the methodology-only
+pattern first; this repo followed by analogy.
