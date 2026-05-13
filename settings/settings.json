@@ -40,6 +40,11 @@
           },
           {
             "type": "command",
+            "command": "~/.claude/scripts/mempalace-normalize-wings.sh",
+            "async": true
+          },
+          {
+            "type": "command",
             "command": "episodic-memory sync",
             "async": true
           }
@@ -53,6 +58,11 @@
           {
             "type": "command",
             "command": "MEMPALACE_PALACE_PATH=$(bash ~/.mempalace/palace_detect.sh) cat | ~/.mempalace/venv/bin/python3 -m mempalace hook run --hook stop --harness claude-code"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/scripts/mempalace-normalize-wings.sh",
+            "async": true
           }
         ]
       }
@@ -81,6 +91,15 @@
             "type": "command",
             "command": "bash ~/.claude/scripts/history-cleanup.sh",
             "async": true
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/scripts/kill-orphan-mcp.sh --kill",
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/scripts/mempalace-issue-1355-check.sh"
           }
         ]
       }

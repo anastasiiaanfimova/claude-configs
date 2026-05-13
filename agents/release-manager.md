@@ -139,3 +139,9 @@ npm version major
 - Don't forget to push tags: `git push origin --tags`
 - Don't create a GitHub release before tagging
 - Don't include `.env`, secrets, or `node_modules` — verify with `npm pack --dry-run` first
+
+## Cross-agent collaboration
+
+- Before publishing, recommend `rules-auditor` to verify the artifact follows CLAUDE.md privacy and anonymization rules (no email/paths/private project names leaking into published code)
+- If the README claims features the code may not actually deliver: recommend `completion-auditor` to verify claims against implementation before shipping
+- For published packages, after release: recommend `bug-reporter` workflow for any post-release issues users surface

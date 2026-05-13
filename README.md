@@ -282,7 +282,7 @@ cp -r skills/claude-cleanup ~/.claude/skills/
 | `claude-cleanup` | Periodic agent-config audit methodology — survey-confirm-execute discipline, truth-source-vs-claim diff for stale-reference detection, duplicate / wrapper / parasitic-dir / approval-log categories |
 | `claude-audit` | Forward-looking "what should I build next?" retro — five proactive lenses (manual reps, agent errors, stuck workarounds, knowledge re-asked, dead capabilities), file-as-state with status lifecycle, internal+external signal cross-check |
 | `history-cleanup` | Session-history rotation methodology — five independent decay axes (approval log, session logs, orphan subagent dirs, worktree-orphan project dirs, dead-cwd projects), survey-confirm-clean phases, manual+hook split |
-| `tooling-update` | Multi-package-manager update methodology — snapshot-update-snapshot pattern, parallel-where-safe vs sequential-where-required, pinned-version awareness, patch re-application reminders |
+| `tooling-update` | Multi-package-manager update methodology — snapshot-update-snapshot pattern, parallel-where-safe vs sequential-where-required, pinned-version awareness, patch re-application reminders, pre-flight upstream-issue scan (catch "this release broke X" before installing), hard gate on known critical OS-specific regressions |
 | `claude-config-push` | Sync mechanism for this repo. **Being rewritten under the new manual workflow** — until then, the listing here is the prior automation; not yet methodology. |
 
 > **QA skills and agents** (tc-create, tc-gap, bug-dig, etc.) are published separately — see [qa-playbook](https://github.com/anastasiiaanfimova/qa-playbook).

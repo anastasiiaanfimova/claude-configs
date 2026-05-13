@@ -28,11 +28,21 @@ MCP server runs as:
 
 ## Wings and rooms (current structure)
 
-Active wings (см. `mempalace_status` для актуальных count'ов):
-- `wing_claude` — Claude's primary palace: diary + projects + recipes + config + decisions
-- `wing_<project>` — <project> project workspace
-- `wing_claude-code`, `wing_claude-sonnet`, `wing_claude-haiku` — model-specific entries
-- `claude` — legacy wing (single drawer, can be migrated)
+`agent_name` convention (per global `~/.claude/CLAUDE.md`) — каждый проект имеет один canonical `agent_name`, palace добавляет `wing_` префикс автоматически (исключение: `<project>` — legacy без префикса):
+
+| Контекст | `agent_name` | Wing |
+|---|---|---|
+| Global workspace (`~/Claude`, `~/.claude`, cross-project) | `claude` | `wing_claude` |
+| <project> | `<project>` | `wing_<project>` |
+| hermes | `hermes` | `wing_hermes` |
+| plants | `plants` | `wing_plants` |
+| <project> | `<project>` (legacy, без префикса) | `<project>` |
+
+**Не использовать** комбо-имена (`claude-main`, `claude-<project>`, `claude-code`, `claude-sonnet`) — они создают фрагментированные wings типа `wing_claude-main`, которые потом приходится консолидировать.
+
+История consolidations: main palace 2026-05-11 (6 мини-wings, 31 drawer → `wing_claude`); zen palace 2026-05-13 (4 typo-wings, 816 drawers → `<project>`).
+
+Перед любой работой — `mempalace_status` для актуальных count'ов. Любые wings вне таблицы выше — кандидаты на консолидацию.
 
 OpenClaw decommissioned 2026-04-29 (folder + drawers удалены полностью).
 
@@ -53,7 +63,7 @@ COMMIT;
 # Connect to palace
 import chromadb
 client = chromadb.PersistentClient(path="/Users/<user>/.mempalace/palace")
-col = client.get_collection("mempalace")
+col = client.get_collection("mempalace_drawers")
 
 # List all wings
 results = col.get(include=["metadatas"])
@@ -85,7 +95,7 @@ old_ids = [
 ~/.mempalace/venv/bin/python3 << 'EOF'
 import chromadb
 client = chromadb.PersistentClient(path="/Users/<user>/.mempalace/palace")
-col = client.get_collection("mempalace")
+col = client.get_collection("mempalace_drawers")
 # your operation here
 EOF
 ```
@@ -117,10 +127,18 @@ When asked to audit the palace:
 
 ## Common maintenance tasks
 
-**Merge legacy wing into current:**
-1. Get drawers from old wing (Python API)
-2. Re-insert with correct wing metadata
-3. Delete old wing entries
+**Merge legacy wing into current** — НЕ через delete+reinsert (ломает embeddings + натыкается на ChromaDB delete bug). Использовать in-place metadata update:
+
+```python
+# Migrate all drawers from old wing → new wing (preserves embeddings + IDs)
+results = col.get(where={"wing": "old_wing_name"}, include=["metadatas"])
+new_mds = [{**m, "wing": "new_wing_name"} for m in results["metadatas"]]
+# Batch in chunks of 200 for safety
+for i in range(0, len(results["ids"]), 200):
+    col.update(ids=results["ids"][i:i+200], metadatas=new_mds[i:i+200])
+```
+
+Аналогично для room migration: `{**m, "room": "new_room"}`. После операции — `mempalace_reconnect` через MCP, чтобы palace перечитал.
 
 **Clean up a wing after project ends:**
 ```bash

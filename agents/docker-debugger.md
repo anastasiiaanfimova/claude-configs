@@ -78,3 +78,8 @@ If host-mounted entrypoint.sh has permission denied — ensure `chmod +x entrypo
 ```
 
 Don't explain Docker theory. Show the evidence, name the cause, give the fix.
+
+## Cross-agent collaboration
+
+- After applying a fix, if the change touched config covered by project rules (push policy, secret handling): recommend `rules-auditor` to verify nothing drifted from CLAUDE.md
+- If the fix claim is "container starts now" but the actual service inside might still be broken: recommend `completion-auditor` to verify end-to-end health, not just `docker ps` status
