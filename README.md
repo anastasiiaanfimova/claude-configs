@@ -7,25 +7,69 @@ your stack.
 
 Everything here is **methodology** — patterns and decision frameworks
 that survive moving to a different agent CLI / MCP stack / memory tool.
-Concrete artifacts (`settings/`, `hooks/`, `agents/`, `templates/`,
-`lib/`) are kept as illustrative *examples* with placeholders for
-paths, scopes, and project-specific names — not as copy-paste-and-run
-files.
+Concrete artifacts (`settings/`, `hooks/`, `agents/`, `examples/`) are
+kept as illustrative *examples* with placeholders for paths, scopes,
+and project-specific names — not as copy-paste-and-run files.
 
-For the editing principles and the "stack-swap test" that decides
-what belongs here, see [`CLAUDE.md`](CLAUDE.md).
+This is **not** where the live working skills live (those are in a
+private `~/.claude/skills/` setup). This is the published artifact, kept
+around for visibility and as a reference for other Claude Code users.
 
 ## What's in the repo
 
 | Path | What it is |
 |---|---|
-| [`examples/CLAUDE.md`](examples/CLAUDE.md) | Methodology example for a global Claude Code instructions file — memory protocol, behavior rules, engineering principles |
+| [`examples/global/CLAUDE.md`](examples/global/CLAUDE.md) | Methodology example for a global Claude Code instructions file — memory protocol, behavior rules, engineering principles |
+| [`examples/project/`](examples/project/) | Per-language project-level CLAUDE.md skeletons with placeholders, plus an `.mcp.json.example` |
 | [`skills/`](skills/) | Methodology essays for individual skills (`workspace-setup`, `claude-cleanup`, `claude-audit`, `history-cleanup`, `tooling-update`) |
 | [`agents/`](agents/) | Agent example files — frontmatter + prompt body, with placeholders for project-specific paths and scopes |
 | [`settings/`](settings/) | Illustrative `settings.example.json` showing hook event categories and the shape of a Claude Code config (placeholders for tool-specific commands) |
 | [`hooks/`](hooks/) | Illustrative `pre-commit.example` global git hook for blocking private names from leaking to public repos |
-| [`templates/`](templates/) | Per-language CLAUDE.md skeletons with placeholders |
-| [`lib/push-mirror/`](lib/push-mirror/) | Reference toolkit for an anonymizing publish-mirror pattern |
+
+## Editing principles
+
+Everything in this repo is written as **methodology** — patterns that
+survive a stack swap.
+
+**Stack-swap test:** every claim in any file here should still apply if
+the reader uses a different agent stack — different MCP servers,
+different memory layer, different cleanup tooling. If something fails
+the test (relies on a specific tool's API or a specific path), it
+belongs in the local working skill, not here. (Mirrors the
+**job-change test** used in
+[qa-playbook](https://github.com/anastasiiaanfimova/qa-playbook) — TMS
+swap, tracker swap. Here the analog is Cursor / Aider / a different
+CLI.)
+
+When editing:
+
+- Reads clean to a stranger using a different agent stack
+- Every "rule" is defensible without referring to a specific tool
+  ("never call `mcp__<server>__<tool>`" is not methodology — "never
+  delete an architecture snapshot during cleanup" is)
+- Examples use placeholders — `<agent>` over `Claude Code`,
+  `<config-file>` over specific paths, `<server>` over real MCP names,
+  `<scope>` over real npm scope
+- When in doubt, the example illustrates the *shape* of a problem, not
+  the specific tool that has it
+- If you need to refer to a real tool or product to make a point, use a
+  full link (`[MemPalace](url)`) — names without context drift
+
+**Workflow:** edit directly → `git add . && git diff --staged` to
+review → `git commit -m "<msg>"` and `git push`. Manual is the right
+level for how often this changes.
+
+**Don't:** edit local working skills from this directory; don't run any
+of the working skills described here (they expect the local stack and
+will fail or produce wrong output); don't bring in real personal data,
+real project names, or organization-private identifiers — anonymization
+is by design.
+
+**Maintenance frequency:** methodology changes when the underlying
+*process* genuinely evolves — rarely. Example files change when the
+patterns themselves shift, not every time the author's local config
+gets a new line. This is a visibility artifact, not a kept-current
+toolkit.
 
 ## Plugins
 
